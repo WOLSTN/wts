@@ -1,79 +1,124 @@
-# TypeScript 7
+# WTS - TypeScript Frontend for Wolstn
 
-[Not sure what this is? Read the announcement post!](https://devblogs.microsoft.com/typescript/typescript-native-port/)
+**WTS** (Wolstn TypeScript) is a TypeScript frontend for the [Wolstn](https://github.com/WOLSTN/wolstn) native compiler. It parses TypeScript code, performs type checking, and emits a typed IR (Intermediate Representation) that Wolstn's backend can compile to native executables.
 
-## Preview
+## Overview
 
-A preview build is available on npm as [`@typescript/native-preview`](https://www.npmjs.com/package/@typescript/native-preview).
+WTS is forked from [Microsoft's TypeScript-go](https://github.com/microsoft/TypeScript-go) (tsgo), but with significant differences:
 
-```sh
-npm install @typescript/native-preview
-npx tsgo # Use this as you would tsc.
+| | tsgo | WTS |
+|---|---|---|
+| **Purpose** | TypeScript → JavaScript | TypeScript → Wolstn IR |
+| **Output** | JavaScript code | Typed IR (JSON/binary) |
+| **Type info** | Used for checking only | **Preserved for codegen** |
+| **Runtime** | V8, Node.js, browsers | Native (ELF/EXE) via Wolstn |
+
+## Why WTS?
+
+Unlike Deno and Bun, which transpile TypeScript to JavaScript for execution in a JS runtime, **Wolstn compiles TypeScript directly to native machine code**. This requires preserving full type information for:
+
+- **Memory layout decisions**: `number` → f64, `string` → GC pointer
+- **Calling conventions**: Generic instantiation, overload resolution
+- **Optimizations**: Inlining, escape analysis, type-driven optimizations
+
+WTS provides this type information through its IR output.
+
+## Installation
+
+```bash
+go build -o wts ./cmd/wts
 ```
 
-A preview VS Code extension is [available on the VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=TypeScriptTeam.native-preview).
+## Usage
 
-To use this, set this in your VS Code settings:
+### Type Check
+
+```bash
+wts check main.ts
+wts check --project tsconfig.json
+```
+
+### Emit IR
+
+```bash
+wts emit-ir main.ts -o main.wir
+wts emit-ir --project tsconfig.json -o program.wir
+```
+
+The output `.wir` file is a JSON-formatted IR containing:
+
+- **Files**: Source file paths and AST nodes
+- **Types**: All resolved types with their properties
+- **Symbols**: All symbols (functions, classes, variables, etc.)
+- **Functions**: Function signatures and parameters
+- **Globals**: Top-level declarations
+
+## IR Format
+
+The IR is versioned and designed for forward compatibility:
 
 ```json
 {
-    "js/ts.experimental.useTsgo": true
+  "version": 1,
+  "files": [...],
+  "types": [...],
+  "symbols": [...],
+  "functions": [...],
+  "globals": [...]
 }
 ```
 
-## What Works So Far?
+See [internal/ir/types.go](internal/ir/types.go) for the full schema.
 
-This is still a work in progress and is not yet at full feature parity with TypeScript. Bugs may exist. Please check this list carefully before logging a new issue or assuming an intentional change.
+## Architecture
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Program creation | done | Same files and module resolution as TS 6.0. Not all resolution modes supported yet. |
-| Parsing/scanning | done | Exact same syntax errors as TS 6.0 |
-| Commandline and `tsconfig.json` parsing | done | Done, though `tsconfig` errors may not be as helpful. |
-| Type resolution | done | Same types as TS 6.0. |
-| Type checking | done | Same errors, locations, and messages as TS 6.0. Types printback in errors may display differently. |
-| JavaScript-specific inference and JSDoc | in progress | Mostly complete, but intentionally lacking some features. Declaration emit not complete. |
-| JSX | done | - |
-| Declaration emit | in progress | Done for TypeScript files. Not yet complete for JavaScript files. |
-| Emit (JS output) | done | - |
-| Watch mode | prototype | Watches files and rebuilds, but no incremental rechecking. Not optimized. |
-| Build mode / project references | done | - |
-| Incremental build | done | - |
-| Language service (LSP) | in progress | Nearly all features implemented. |
-| API | not ready | - |
+```
+Source Code (.ts)
+      ↓
+   Parser
+      ↓
+    AST
+      ↓
+   Binder
+      ↓
+  Checker
+      ↓
+Typed AST + Types
+      ↓
+ IR Emitter
+      ↓
+Wolstn IR (.wir)
+```
 
-Definitions:
+## Modules
 
- * **done** aka "believed done": We're not currently aware of any deficits or major work left to do. OK to log bugs
- * **in progress**: currently being worked on; some features may work and some might not. OK to log panics, but nothing else please
- * **prototype**: proof-of-concept only; do not log bugs
- * **not ready**: either haven't even started yet, or far enough from ready that you shouldn't bother messing with it yet
+WTS retains only the frontend components from tsgo:
 
-## Other Notes
+| Module | Purpose |
+|--------|---------|
+| `ast` | AST definitions |
+| `parser` | Source code parsing |
+| `scanner` | Lexical analysis |
+| `binder` | Symbol binding |
+| `checker` | Type checking |
+| `ir` | IR emission (new) |
 
-Long-term, we expect that this repo and its contents will be merged into `microsoft/TypeScript`.
-As a result, the repo and issue tracker for typescript-go will eventually be closed, so treat discussions/issues accordingly.
+Removed components (not needed for native compilation):
 
-For a list of intentional changes with respect to TypeScript 6.0, see CHANGES.md.
+- JS emitter, printer, transformers
+- LSP server, language service
+- API server
+- Format, fourslash tests
 
-## Contributing
+## Development
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
+WTS tracks upstream tsgo for parser/checker updates. The frontend components (parser, binder, checker) are stable and rarely change their API.
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+## License
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Trademarks
+## Acknowledgments
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
-trademarks or logos is subject to and must follow
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
+- Microsoft TypeScript Team for [TypeScript-go](https://github.com/microsoft/TypeScript-go)
+- The Wolstn project
