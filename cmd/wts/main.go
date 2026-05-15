@@ -83,7 +83,22 @@ func runCheck(args []string) int {
 	project := fs.String("p", "", "path to tsconfig.json")
 	help := fs.Bool("h", false, "show help")
 
-	if err := fs.Parse(args); err != nil {
+	var flagArgs, posArgs []string
+	for i := 0; i < len(args); i++ {
+		if args[i] == "-h" || args[i] == "--help" {
+			flagArgs = append(flagArgs, args[i])
+		} else if args[i] == "-p" {
+			flagArgs = append(flagArgs, args[i])
+			if i+1 < len(args) {
+				i++
+				flagArgs = append(flagArgs, args[i])
+			}
+		} else {
+			posArgs = append(posArgs, args[i])
+		}
+	}
+
+	if err := fs.Parse(flagArgs); err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing flags: %v\n", err)
 		return 1
 	}
@@ -99,7 +114,7 @@ If no files or project are specified, checks all .ts files in the current direct
 		return 0
 	}
 
-	remainingArgs := fs.Args()
+	remainingArgs := posArgs
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting current directory: %v\n", err)
@@ -151,7 +166,27 @@ func runEmitIR(args []string) int {
 	output := fs.String("o", "", "output file path (default: stdout)")
 	help := fs.Bool("h", false, "show help")
 
-	if err := fs.Parse(args); err != nil {
+	// Pre-process: separate flags from positional args to support flags after filenames
+	var flagArgs, posArgs []string
+	for i := 0; i < len(args); i++ {
+		if args[i] == "-h" || args[i] == "--help" {
+			flagArgs = append(flagArgs, args[i])
+		} else if args[i] == "-o" || args[i] == "-p" {
+			flagArgs = append(flagArgs, args[i])
+			if i+1 < len(args) {
+				i++
+				flagArgs = append(flagArgs, args[i])
+			}
+		} else if len(args[i]) > 2 && args[i][0] == '-' && args[i][1] == '-' {
+			flagArgs = append(flagArgs, args[i])
+		} else if len(args[i]) > 1 && args[i][0] == '-' && args[i][1] != '-' {
+			flagArgs = append(flagArgs, args[i])
+		} else {
+			posArgs = append(posArgs, args[i])
+		}
+	}
+
+	if err := fs.Parse(flagArgs); err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing flags: %v\n", err)
 		return 1
 	}
@@ -168,7 +203,7 @@ If no files or project are specified, processes all .ts files in the current dir
 		return 0
 	}
 
-	remainingArgs := fs.Args()
+	remainingArgs := posArgs
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error getting current directory: %v\n", err)
