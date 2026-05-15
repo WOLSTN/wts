@@ -218,14 +218,35 @@ type Export struct {
 }
 
 type Function struct {
-	Name       string   `json:"name"`
-	Symbol     string   `json:"symbol"`
-	Parameters []Param  `json:"parameters,omitempty"`
-	ReturnType string   `json:"returnType,omitempty"`
-	TypeParams []string `json:"typeParams,omitempty"`
-	Signature  string   `json:"signature,omitempty"`
-	IsAsync    bool     `json:"isAsync,omitempty"`
-	IsGenerator bool    `json:"isGenerator,omitempty"`
+	Name       string     `json:"name"`
+	Symbol     string     `json:"symbol"`
+	Parameters []Param    `json:"parameters,omitempty"`
+	ReturnType string     `json:"returnType,omitempty"`
+	TypeParams []string   `json:"typeParams,omitempty"`
+	Signature  string     `json:"signature,omitempty"`
+	Body       *FuncBody  `json:"body,omitempty"`
+	IsAsync    bool       `json:"isAsync,omitempty"`
+	IsGenerator bool      `json:"isGenerator,omitempty"`
+}
+
+type FuncBody struct {
+	Blocks []*BasicBlock `json:"blocks,omitempty"`
+}
+
+type BasicBlock struct {
+	Id     int      `json:"id"`
+	Label  string   `json:"label,omitempty"`
+	Preds  []int    `json:"preds,omitempty"`
+	Succs  []int    `json:"succs,omitempty"`
+	Instrs []*Instr `json:"instrs,omitempty"`
+}
+
+type Instr struct {
+	Id       string   `json:"id"`
+	Opcode   string   `json:"opcode"`
+	Type     string   `json:"type,omitempty"`
+	Operands []string `json:"operands,omitempty"`
+	Value    any      `json:"value,omitempty"`
 }
 
 type Variable struct {
@@ -842,6 +863,7 @@ func (e *Emitter) emitFunctionFromSymbol(sym *ast.Symbol) {
 		flags := ast.GetFunctionFlags(decl)
 		fn.IsAsync = flags&ast.FunctionFlagsAsync != 0
 		fn.IsGenerator = flags&ast.FunctionFlagsGenerator != 0
+		fn.Body = e.emitFunctionBody(decl)
 	}
 
 	sig := e.checker.GetResolvedSignature(sym.Declarations[0])
@@ -863,6 +885,573 @@ func (e *Emitter) emitFunctionFromSymbol(sym *ast.Symbol) {
 	}
 
 	e.irProgram.Functions = append(e.irProgram.Functions, fn)
+}
+
+type bodyEmitter struct {
+	e          *Emitter
+	body       *FuncBody
+	curBlock   *BasicBlock
+	blockIdGen int
+	instrIdGen int
+	blockStack []*BasicBlock // for if/while/loop target blocks
+}
+
+func (be *bodyEmitter) newBlockId() int {
+	be.blockIdGen++
+	return be.blockIdGen
+}
+
+func (be *bodyEmitter) newInstrId() string {
+	be.instrIdGen++
+	return fmt.Sprintf("i%d", be.instrIdGen)
+}
+
+func (be *bodyEmitter) addBlock(label string) *BasicBlock {
+	block := &BasicBlock{
+		Id:    be.newBlockId(),
+		Label: label,
+	}
+	if be.body == nil {
+		be.body = &FuncBody{}
+	}
+	be.body.Blocks = append(be.body.Blocks, block)
+	return block
+}
+
+func (be *bodyEmitter) addInstr(opcode string, typ string, value any, operands []string) string {
+	id := be.newInstrId()
+	instr := &Instr{
+		Id:       id,
+		Opcode:   opcode,
+		Type:     typ,
+		Value:    value,
+		Operands: operands,
+	}
+	be.curBlock.Instrs = append(be.curBlock.Instrs, instr)
+	return id
+}
+
+func (be *bodyEmitter) connectBlocks(pred, succ *BasicBlock) {
+	if pred != nil && succ != nil {
+		pred.Succs = append(pred.Succs, succ.Id)
+		succ.Preds = append(succ.Preds, pred.Id)
+	}
+}
+
+func (e *Emitter) emitFunctionBody(decl *ast.Node) *FuncBody {
+	bodyNode := decl.Body()
+	if bodyNode == nil {
+		return nil
+	}
+
+	be := &bodyEmitter{e: e}
+	entry := be.addBlock("entry")
+	be.curBlock = entry
+
+	be.emitBlockStatements(bodyNode)
+
+	if len(be.body.Blocks) == 0 {
+		return nil
+	}
+	return be.body
+}
+
+func (be *bodyEmitter) emitBlockStatements(block *ast.Node) {
+	if block == nil {
+		return
+	}
+	stmtList := block.Statements()
+	if stmtList == nil {
+		return
+	}
+	for _, stmt := range stmtList {
+		be.emitStatement(stmt)
+		if be.curBlock == nil {
+			return
+		}
+	}
+}
+
+func (be *bodyEmitter) emitStatement(stmt *ast.Node) {
+	if stmt == nil {
+		return
+	}
+	switch stmt.Kind {
+	case ast.KindVariableStatement:
+		be.emitVariableStatement(stmt)
+	case ast.KindReturnStatement:
+		be.emitReturnStatement(stmt)
+	case ast.KindExpressionStatement:
+		be.emitExpressionStatement(stmt)
+	case ast.KindIfStatement:
+		be.emitIfStatement(stmt)
+	case ast.KindWhileStatement:
+		be.emitWhileStatement(stmt)
+	case ast.KindDoStatement:
+		be.emitDoStatement(stmt)
+	case ast.KindForStatement:
+		be.emitForStatement(stmt)
+	case ast.KindForInStatement, ast.KindForOfStatement:
+		be.emitExpression(stmt)
+	case ast.KindSwitchStatement:
+		be.emitSwitchStatement(stmt)
+	case ast.KindBlock:
+		be.emitBlockStatements(stmt)
+	case ast.KindBreakStatement:
+		be.addInstr("break", "", nil, nil)
+	case ast.KindContinueStatement:
+		be.addInstr("continue", "", nil, nil)
+	case ast.KindEmptyStatement:
+		// nothing
+	case ast.KindTryStatement:
+		be.emitExpression(stmt)
+	case ast.KindThrowStatement:
+		be.emitExpression(stmt)
+	case ast.KindDebuggerStatement:
+		// nothing
+	default:
+		be.emitExpression(stmt)
+	}
+}
+
+func (be *bodyEmitter) emitVariableStatement(stmt *ast.Node) {
+	stmt.ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindVariableDeclarationList {
+			declList := child.AsVariableDeclarationList()
+			for _, decl := range declList.Declarations.Nodes {
+				be.emitVariableDeclaration(decl)
+			}
+		}
+		return false
+	})
+}
+
+func (be *bodyEmitter) emitVariableDeclaration(decl *ast.Node) {
+	varDecl := decl.AsVariableDeclaration()
+	name := varDecl.Name()
+	if name == nil {
+		return
+	}
+	nameText := name.Text()
+	initializer := varDecl.Initializer
+	id := ""
+	if initializer != nil {
+		valId := be.emitExpression(initializer)
+		id = be.addInstr("store", be.e.getNodeType(decl), nil, []string{valId})
+	} else {
+		id = be.addInstr("alloc", be.e.getNodeType(decl), nil, nil)
+	}
+	if nameText != "" {
+		_ = id
+	}
+}
+
+func (be *bodyEmitter) emitReturnStatement(stmt *ast.Node) {
+	expr := stmt.Expression()
+	if expr != nil {
+		valId := be.emitExpression(expr)
+		be.addInstr("ret", be.e.getNodeType(stmt), nil, []string{valId})
+	} else {
+		be.addInstr("ret", "", nil, nil)
+	}
+}
+
+func (be *bodyEmitter) emitExpressionStatement(stmt *ast.Node) {
+	expr := stmt.Expression()
+	if expr != nil {
+		be.emitExpression(expr)
+	}
+}
+
+func (be *bodyEmitter) emitIfStatement(stmt *ast.Node) {
+	cond := stmt.Expression()
+	thenBlock := stmt.AsIfStatement().ThenStatement
+	elseBlock := stmt.AsIfStatement().ElseStatement
+
+	condId := be.emitExpression(cond)
+
+	thenBB := be.addBlock("if.then")
+	elseBB := be.addBlock("if.else")
+	endBB := be.addBlock("if.end")
+
+	be.addInstr("br", "", nil, []string{condId, thenBB.Label, elseBB.Label})
+	be.connectBlocks(be.curBlock, thenBB)
+	be.connectBlocks(be.curBlock, elseBB)
+
+	be.curBlock = thenBB
+	if thenBlock != nil {
+		if thenBlock.Kind == ast.KindBlock {
+			be.emitBlockStatements(thenBlock)
+		} else {
+			be.emitStatement(thenBlock)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{endBB.Label})
+	be.connectBlocks(be.curBlock, endBB)
+
+	be.curBlock = elseBB
+	if elseBlock != nil {
+		if elseBlock.Kind == ast.KindBlock {
+			be.emitBlockStatements(elseBlock)
+		} else {
+			be.emitStatement(elseBlock)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{endBB.Label})
+	be.connectBlocks(be.curBlock, endBB)
+
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitWhileStatement(stmt *ast.Node) {
+	condBB := be.addBlock("while.cond")
+	bodyBB := be.addBlock("while.body")
+	endBB := be.addBlock("while.end")
+
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(be.curBlock, condBB)
+
+	be.curBlock = condBB
+	condId := be.emitExpression(stmt.Expression())
+	be.addInstr("br", "", nil, []string{condId, bodyBB.Label, endBB.Label})
+	be.connectBlocks(condBB, bodyBB)
+	be.connectBlocks(condBB, endBB)
+
+	be.curBlock = bodyBB
+	body := stmt.AsWhileStatement().Statement
+	if body != nil {
+		if body.Kind == ast.KindBlock {
+			be.emitBlockStatements(body)
+		} else {
+			be.emitStatement(body)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(bodyBB, condBB)
+
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitDoStatement(stmt *ast.Node) {
+	bodyBB := be.addBlock("do.body")
+	condBB := be.addBlock("do.cond")
+	endBB := be.addBlock("do.end")
+
+	be.addInstr("jmp", "", nil, []string{bodyBB.Label})
+	be.connectBlocks(be.curBlock, bodyBB)
+
+	be.curBlock = bodyBB
+	body := stmt.AsDoStatement().Statement
+	if body != nil {
+		if body.Kind == ast.KindBlock {
+			be.emitBlockStatements(body)
+		} else {
+			be.emitStatement(body)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(bodyBB, condBB)
+
+	be.curBlock = condBB
+	condId := be.emitExpression(stmt.Expression())
+	be.addInstr("br", "", nil, []string{condId, bodyBB.Label, endBB.Label})
+	be.connectBlocks(condBB, bodyBB)
+	be.connectBlocks(condBB, endBB)
+
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitForStatement(stmt *ast.Node) {
+	forStmt := stmt.AsForStatement()
+	initBB := be.addBlock("for.init")
+	condBB := be.addBlock("for.cond")
+	bodyBB := be.addBlock("for.body")
+	incrBB := be.addBlock("for.increment")
+	endBB := be.addBlock("for.end")
+
+	be.addInstr("jmp", "", nil, []string{initBB.Label})
+	be.connectBlocks(be.curBlock, initBB)
+
+	be.curBlock = initBB
+	if initializer := forStmt.Initializer; initializer != nil {
+		if initializer.Kind == ast.KindVariableDeclarationList {
+			declList := initializer.AsVariableDeclarationList()
+			for _, decl := range declList.Declarations.Nodes {
+				be.emitVariableDeclaration(decl)
+			}
+		} else {
+			be.emitExpression(initializer)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(initBB, condBB)
+
+	be.curBlock = condBB
+	if cond := forStmt.Condition; cond != nil {
+		condId := be.emitExpression(cond)
+		be.addInstr("br", "", nil, []string{condId, bodyBB.Label, endBB.Label})
+	} else {
+		be.addInstr("jmp", "", nil, []string{bodyBB.Label})
+	}
+	be.connectBlocks(condBB, bodyBB)
+	be.connectBlocks(condBB, endBB)
+
+	be.curBlock = bodyBB
+	body := forStmt.Statement
+	if body != nil {
+		if body.Kind == ast.KindBlock {
+			be.emitBlockStatements(body)
+		} else {
+			be.emitStatement(body)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{incrBB.Label})
+	be.connectBlocks(bodyBB, incrBB)
+
+	be.curBlock = incrBB
+	if incrementor := forStmt.Incrementor; incrementor != nil {
+		be.emitExpression(incrementor)
+	}
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(incrBB, condBB)
+
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitSwitchStatement(stmt *ast.Node) {
+	condId := be.emitExpression(stmt.Expression())
+	endBB := be.addBlock("switch.end")
+
+	switchBlock := stmt.AsSwitchStatement().CaseBlock.AsCaseBlock()
+	for _, clause := range switchBlock.Clauses.Nodes {
+		bb := be.addBlock("switch.case")
+		be.addInstr("case", "", nil, []string{condId})
+		if clause.Kind == ast.KindCaseClause {
+			caseClause := clause.AsCaseOrDefaultClause()
+			caseValId := be.emitExpression(caseClause.Expression)
+			be.addInstr("case.match", "", nil, []string{caseValId})
+		}
+		for _, cs := range clause.Statements() {
+			be.emitStatement(cs)
+		}
+		be.connectBlocks(be.curBlock, bb)
+		be.curBlock = bb
+	}
+	be.addInstr("jmp", "", nil, []string{endBB.Label})
+	be.connectBlocks(be.curBlock, endBB)
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitExpression(node *ast.Node) string {
+	if node == nil {
+		return ""
+	}
+
+	typ := be.e.getNodeType(node)
+
+	switch node.Kind {
+	case ast.KindNumericLiteral:
+		return be.addInstr("literal", typ, node.AsNumericLiteral().Text, nil)
+	case ast.KindStringLiteral:
+		return be.addInstr("literal", typ, node.Text(), nil)
+	case ast.KindFalseKeyword:
+		return be.addInstr("literal", typ, false, nil)
+	case ast.KindTrueKeyword:
+		return be.addInstr("literal", typ, true, nil)
+	case ast.KindNullKeyword:
+		return be.addInstr("literal", typ, nil, nil)
+	case ast.KindIdentifier:
+		text := node.Text()
+		return be.addInstr("ident", typ, text, nil)
+	case ast.KindThisKeyword:
+		return be.addInstr("this", typ, nil, nil)
+	case ast.KindSuperKeyword:
+		return be.addInstr("super", typ, nil, nil)
+	case ast.KindBinaryExpression:
+		return be.emitBinaryExpression(node, typ)
+	case ast.KindPrefixUnaryExpression:
+		return be.emitUnaryExpression(node, typ)
+	case ast.KindPostfixUnaryExpression:
+		return be.emitPostfixExpression(node, typ)
+	case ast.KindCallExpression:
+		return be.emitCallExpression(node, typ)
+	case ast.KindPropertyAccessExpression:
+		return be.emitPropertyAccess(node, typ)
+	case ast.KindElementAccessExpression:
+		return be.emitElementAccess(node, typ)
+	case ast.KindNewExpression:
+		return be.emitNewExpression(node, typ)
+	case ast.KindFunctionExpression:
+		return be.addInstr("func", typ, nil, nil)
+	case ast.KindArrowFunction:
+		return be.addInstr("func", typ, nil, nil)
+	case ast.KindArrayLiteralExpression:
+		return be.emitArrayLiteral(node, typ)
+	case ast.KindObjectLiteralExpression:
+		return be.addInstr("object", typ, nil, nil)
+	case ast.KindTemplateExpression:
+		return be.emitTemplateExpression(node, typ)
+	case ast.KindConditionalExpression:
+		return be.emitConditionalExpression(node, typ)
+	case ast.KindTypeOfExpression:
+		exprId := be.emitExpression(node.AsTypeOfExpression().Expression)
+		return be.addInstr("typeof", typ, nil, []string{exprId})
+	case ast.KindAwaitExpression:
+		exprId := be.emitExpression(node.AsAwaitExpression().Expression)
+		return be.addInstr("await", typ, nil, []string{exprId})
+	case ast.KindYieldExpression:
+		yield := node.AsYieldExpression()
+		if yield.Expression != nil {
+			exprId := be.emitExpression(yield.Expression)
+			return be.addInstr("yield", typ, nil, []string{exprId})
+		}
+		return be.addInstr("yield", typ, nil, nil)
+	case ast.KindVoidExpression:
+		exprId := be.emitExpression(node.AsVoidExpression().Expression)
+		return be.addInstr("void", typ, nil, []string{exprId})
+	case ast.KindDeleteExpression:
+		exprId := be.emitExpression(node.AsDeleteExpression().Expression)
+		return be.addInstr("delete", typ, nil, []string{exprId})
+	case ast.KindSpreadElement:
+		exprId := be.emitExpression(node.AsSpreadElement().Expression)
+		return be.addInstr("spread", typ, nil, []string{exprId})
+	case ast.KindAsExpression, ast.KindTypeAssertionExpression, ast.KindSatisfiesExpression:
+		expr := node.Expression()
+		exprId := be.emitExpression(expr)
+		return be.addInstr("cast", typ, nil, []string{exprId})
+	case ast.KindNonNullExpression:
+		exprId := be.emitExpression(node.Expression())
+		return be.addInstr("notnull", typ, nil, []string{exprId})
+	case ast.KindParenthesizedExpression:
+		return be.emitExpression(node.AsParenthesizedExpression().Expression)
+	case ast.KindTypeReference:
+		return be.addInstr("type", typ, nil, nil)
+	case ast.KindRegularExpressionLiteral:
+		return be.addInstr("literal", typ, node.Text(), nil)
+	case ast.KindNoSubstitutionTemplateLiteral:
+		return be.addInstr("literal", typ, node.Text(), nil)
+	case ast.KindTemplateHead, ast.KindTemplateMiddle, ast.KindTemplateTail:
+		return be.addInstr("literal", typ, node.Text(), nil)
+	default:
+		return be.addInstr("expr", typ, node.Kind.String(), nil)
+	}
+}
+
+func (be *bodyEmitter) emitBinaryExpression(node *ast.Node, typ string) string {
+	bin := node.AsBinaryExpression()
+	leftId := be.emitExpression(bin.Left)
+	rightId := be.emitExpression(bin.Right)
+	op := bin.OperatorToken.Kind.String()
+	if bin.OperatorToken.Kind == ast.KindEqualsToken {
+		return be.addInstr("store", typ, nil, []string{leftId, rightId})
+	}
+	if bin.OperatorToken.Kind == ast.KindPlusEqualsToken || bin.OperatorToken.Kind == ast.KindMinusEqualsToken {
+		return be.addInstr("compound", typ, op, []string{leftId, rightId})
+	}
+	return be.addInstr("binary", typ, op, []string{leftId, rightId})
+}
+
+func (be *bodyEmitter) emitUnaryExpression(node *ast.Node, typ string) string {
+	unary := node.AsPrefixUnaryExpression()
+	operandId := be.emitExpression(unary.Operand)
+	if unary.Operator == ast.KindPlusPlusToken {
+		return be.addInstr("inc", typ, nil, []string{operandId})
+	}
+	if unary.Operator == ast.KindMinusMinusToken {
+		return be.addInstr("dec", typ, nil, []string{operandId})
+	}
+	return be.addInstr("unary", typ, unary.Operator.String(), []string{operandId})
+}
+
+func (be *bodyEmitter) emitPostfixExpression(node *ast.Node, typ string) string {
+	postfix := node.AsPostfixUnaryExpression()
+	operandId := be.emitExpression(postfix.Operand)
+	if postfix.Operator == ast.KindPlusPlusToken {
+		return be.addInstr("inc", typ, nil, []string{operandId})
+	}
+	if postfix.Operator == ast.KindMinusMinusToken {
+		return be.addInstr("dec", typ, nil, []string{operandId})
+	}
+	return be.addInstr("unary", typ, postfix.Operator.String(), []string{operandId})
+}
+
+func (be *bodyEmitter) emitCallExpression(node *ast.Node, typ string) string {
+	call := node.AsCallExpression()
+	calleeId := be.emitExpression(call.Expression)
+	var argIds []string
+	for _, arg := range call.Arguments.Nodes {
+		argIds = append(argIds, be.emitExpression(arg))
+	}
+	allOperands := append([]string{calleeId}, argIds...)
+	return be.addInstr("call", typ, nil, allOperands)
+}
+
+func (be *bodyEmitter) emitPropertyAccess(node *ast.Node, typ string) string {
+	pa := node.AsPropertyAccessExpression()
+	objId := be.emitExpression(pa.Expression)
+	propName := ""
+	name := ast.GetElementOrPropertyAccessName(node)
+	if name != nil {
+		propName = name.Text()
+	}
+	return be.addInstr("prop", typ, propName, []string{objId})
+}
+
+func (be *bodyEmitter) emitElementAccess(node *ast.Node, typ string) string {
+	ea := node.AsElementAccessExpression()
+	objId := be.emitExpression(ea.Expression)
+	idxId := be.emitExpression(ea.ArgumentExpression)
+	return be.addInstr("elem", typ, nil, []string{objId, idxId})
+}
+
+func (be *bodyEmitter) emitNewExpression(node *ast.Node, typ string) string {
+	ne := node.AsNewExpression()
+	calleeId := be.emitExpression(ne.Expression)
+	var argIds []string
+	if ne.Arguments != nil {
+		for _, arg := range ne.Arguments.Nodes {
+			argIds = append(argIds, be.emitExpression(arg))
+		}
+	}
+	allOperands := append([]string{calleeId}, argIds...)
+	return be.addInstr("new", typ, nil, allOperands)
+}
+
+func (be *bodyEmitter) emitArrayLiteral(node *ast.Node, typ string) string {
+	arr := node.AsArrayLiteralExpression()
+	var elemIds []string
+	if arr.Elements != nil {
+		for _, elem := range arr.Elements.Nodes {
+			elemIds = append(elemIds, be.emitExpression(elem))
+		}
+	}
+	return be.addInstr("array", typ, nil, elemIds)
+}
+
+func (be *bodyEmitter) emitTemplateExpression(node *ast.Node, typ string) string {
+	tmpl := node.AsTemplateExpression()
+	var parts []string
+	parts = append(parts, be.emitExpression(tmpl.Head))
+	for _, span := range tmpl.TemplateSpans.Nodes {
+		parts = append(parts, be.emitExpression(span.AsTemplateSpan().Expression))
+		parts = append(parts, be.emitExpression(span.AsTemplateSpan().Literal))
+	}
+	return be.addInstr("template", typ, nil, parts)
+}
+
+func (be *bodyEmitter) emitConditionalExpression(node *ast.Node, typ string) string {
+	cond := node.AsConditionalExpression()
+	condId := be.emitExpression(cond.Condition)
+	whenTrueId := be.emitExpression(cond.WhenTrue)
+	whenFalseId := be.emitExpression(cond.WhenFalse)
+	return be.addInstr("select", typ, nil, []string{condId, whenTrueId, whenFalseId})
+}
+
+func (e *Emitter) getNodeType(node *ast.Node) string {
+	if t := e.checker.GetTypeOfNode(node); t != nil {
+		return e.getOrCreateTypeId(t)
+	}
+	return ""
 }
 
 func (e *Emitter) emitVariableFromSymbol(sym *ast.Symbol) {
