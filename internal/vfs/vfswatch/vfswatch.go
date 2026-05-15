@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/microsoft/typescript-go/internal/vfs"
+	"github.com/wolstn/wts/internal/vfs"
 	"github.com/zeebo/xxh3"
 )
 

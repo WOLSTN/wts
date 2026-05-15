@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"github.com/microsoft/typescript-go/internal/core"
+	"github.com/wolstn/wts/internal/core"
 )
 
 type SubtreeFacts uint32

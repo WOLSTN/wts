@@ -4,8 +4,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/vfs"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/vfs"
 )
 
 type FS struct {

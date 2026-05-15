@@ -15,10 +15,10 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/json"
-	"github.com/microsoft/typescript-go/internal/stringutil"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/json"
+	"github.com/wolstn/wts/internal/stringutil"
+	"github.com/wolstn/wts/internal/tspath"
 )
 
 func ApplyDebugStackLimit() {

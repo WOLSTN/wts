@@ -5,10 +5,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/evaluator"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/evaluator"
 )
 
 //go:generate go tool golang.org/x/tools/cmd/stringer -type=SignatureKind -output=stringer_generated.go

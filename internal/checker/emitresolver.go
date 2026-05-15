@@ -5,13 +5,13 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/binder"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/evaluator"
-	"github.com/microsoft/typescript-go/internal/jsnum"
-	"github.com/microsoft/typescript-go/internal/nodebuilder"
-	"github.com/microsoft/typescript-go/internal/printer"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/binder"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/evaluator"
+	"github.com/wolstn/wts/internal/jsnum"
+	"github.com/wolstn/wts/internal/nodebuilder"
+	"github.com/wolstn/wts/internal/printer"
 )
 
 var _ printer.EmitResolver = (*EmitResolver)(nil)

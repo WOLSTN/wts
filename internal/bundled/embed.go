@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/microsoft/typescript-go/internal/vfs"
+	"github.com/wolstn/wts/internal/vfs"
 )
 
 const embedded = true

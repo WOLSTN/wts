@@ -11,10 +11,10 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/tspath"
-	"github.com/microsoft/typescript-go/internal/vfs"
-	"github.com/microsoft/typescript-go/internal/vfs/internal"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/tspath"
+	"github.com/wolstn/wts/internal/vfs"
+	"github.com/wolstn/wts/internal/vfs/internal"
 )
 
 var (

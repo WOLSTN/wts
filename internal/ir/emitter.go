@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -9,26 +10,112 @@ import (
 	"github.com/wolstn/wts/internal/compiler"
 )
 
+const Version = 1
+
+type Program struct {
+	Version   int         `json:"version"`
+	Files     []*File     `json:"files"`
+	Types     []*Type     `json:"types"`
+	Symbols   []*Symbol   `json:"symbols"`
+	Globals   []*Global   `json:"globals"`
+	Functions []*Function `json:"functions"`
+}
+
+type File struct {
+	Path     string `json:"path"`
+	Source   string `json:"source,omitempty"`
+	RootNode *Node  `json:"rootNode"`
+}
+
+type Node struct {
+	Kind     string  `json:"kind"`
+	Pos      int     `json:"pos"`
+	End      int     `json:"end"`
+	Children []*Node `json:"children,omitempty"`
+	Symbol   string  `json:"symbol,omitempty"`
+	Type     string  `json:"type,omitempty"`
+	Text     string  `json:"text,omitempty"`
+}
+
+type Type struct {
+	Id          string   `json:"id"`
+	Kind        string   `json:"kind"`
+	Flags       uint32   `json:"flags"`
+	Name        string   `json:"name,omitempty"`
+	Members     []string `json:"members,omitempty"`
+	Properties  []string `json:"properties,omitempty"`
+	Signatures  []string `json:"signatures,omitempty"`
+	TypeArgs    []string `json:"typeArgs,omitempty"`
+	Target      string   `json:"target,omitempty"`
+	Value       any      `json:"value,omitempty"`
+}
+
+type Symbol struct {
+	Id           string   `json:"id"`
+	Name         string   `json:"name"`
+	Flags        uint64   `json:"flags"`
+	Kind         string   `json:"kind"`
+	Type         string   `json:"type,omitempty"`
+	Declarations []string `json:"declarations,omitempty"`
+	Members      []string `json:"members,omitempty"`
+	Exports      []string `json:"exports,omitempty"`
+}
+
+type Global struct {
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+	Type   string `json:"type"`
+}
+
+type Function struct {
+	Name       string  `json:"name"`
+	Symbol     string  `json:"symbol"`
+	Signature  string  `json:"signature"`
+	Parameters []Param `json:"parameters"`
+	ReturnType string  `json:"returnType"`
+	Body       *Block  `json:"body,omitempty"`
+}
+
+type Param struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type Block struct {
+	Statements []Statement `json:"statements"`
+}
+
+type Statement struct {
+	Kind string `json:"kind"`
+	Data any    `json:"data"`
+}
+
 type Emitter struct {
-	program    *compiler.Program
-	checker    *checker.Checker
-	irProgram  *Program
-	typeMap    map[*checker.Type]string
-	symbolMap  map[*ast.Symbol]string
-	typeIdGen  int
+	program     *compiler.Program
+	checker     *checker.Checker
+	irProgram   *Program
+	typeMap     map[*checker.Type]string
+	symbolMap   map[*ast.Symbol]string
+	typeIdGen   int
 	symbolIdGen int
 }
 
 func NewEmitter(program *compiler.Program) *Emitter {
 	return &Emitter{
-		program:    program,
-		irProgram:  &Program{Version: Version},
-		typeMap:    make(map[*checker.Type]string),
-		symbolMap:  make(map[*ast.Symbol]string),
+		program:   program,
+		irProgram: &Program{Version: Version},
+		typeMap:   make(map[*checker.Type]string),
+		symbolMap: make(map[*ast.Symbol]string),
 	}
 }
 
 func (e *Emitter) Emit() (*Program, error) {
+	ctx := context.Background()
+	checker, release := e.program.GetTypeChecker(ctx)
+	defer release()
+
+	e.checker = checker
+
 	for _, sourceFile := range e.program.GetSourceFiles() {
 		if sourceFile.IsDeclarationFile {
 			continue
@@ -37,6 +124,9 @@ func (e *Emitter) Emit() (*Program, error) {
 			return nil, err
 		}
 	}
+
+	e.emitGlobalSymbols()
+
 	return e.irProgram, nil
 }
 
@@ -71,6 +161,14 @@ func (e *Emitter) emitNode(node *ast.Node) *Node {
 		}
 	}
 
+	if node.Kind == ast.KindIdentifier || node.Kind == ast.KindStringLiteral {
+		if node.IdentifierText() != "" {
+			irNode.Text = node.IdentifierText()
+		} else if str := node.StringLiteralText(); str != "" {
+			irNode.Text = str
+		}
+	}
+
 	node.ForEachChild(func(child *ast.Node) bool {
 		irNode.Children = append(irNode.Children, e.emitNode(child))
 		return false
@@ -79,7 +177,32 @@ func (e *Emitter) emitNode(node *ast.Node) *Node {
 	return irNode
 }
 
+func (e *Emitter) emitGlobalSymbols() {
+	for _, sourceFile := range e.program.GetSourceFiles() {
+		if sourceFile.IsDeclarationFile {
+			continue
+		}
+		if sourceFile.Symbol != nil {
+			for name, export := range sourceFile.Symbol.Exports {
+				irGlobal := &Global{
+					Name:   name,
+					Symbol: e.getOrCreateSymbolId(export),
+				}
+				if e.checker != nil {
+					if t := e.checker.GetTypeOfSymbol(export); t != nil {
+						irGlobal.Type = e.getOrCreateTypeId(t)
+					}
+				}
+				e.irProgram.Globals = append(e.irProgram.Globals, irGlobal)
+			}
+		}
+	}
+}
+
 func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
+	if t == nil {
+		return ""
+	}
 	if id, ok := e.typeMap[t]; ok {
 		return id
 	}
@@ -96,7 +219,6 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 
 	if sym := t.Symbol(); sym != nil {
 		irType.Name = sym.Name
-		irType.Target = e.getOrCreateSymbolId(sym)
 	}
 
 	e.irProgram.Types = append(e.irProgram.Types, irType)
@@ -104,6 +226,9 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 }
 
 func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
+	if sym == nil {
+		return ""
+	}
 	if id, ok := e.symbolMap[sym]; ok {
 		return id
 	}
@@ -115,8 +240,14 @@ func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
 	irSym := &Symbol{
 		Id:    id,
 		Name:  sym.Name,
-		Flags: uint32(sym.Flags),
+		Flags: uint64(sym.Flags),
 		Kind:  e.symbolKindToString(sym),
+	}
+
+	if e.checker != nil {
+		if t := e.checker.GetTypeOfSymbol(sym); t != nil {
+			irSym.Type = e.getOrCreateTypeId(t)
+		}
 	}
 
 	e.irProgram.Symbols = append(e.irProgram.Symbols, irSym)
@@ -128,12 +259,16 @@ func (e *Emitter) typeKindToString(t *checker.Type) string {
 	switch {
 	case flags&checker.TypeFlagsAny != 0:
 		return "any"
+	case flags&checker.TypeFlagsUnknown != 0:
+		return "unknown"
 	case flags&checker.TypeFlagsString != 0:
 		return "string"
 	case flags&checker.TypeFlagsNumber != 0:
 		return "number"
 	case flags&checker.TypeFlagsBoolean != 0:
 		return "boolean"
+	case flags&checker.TypeFlagsBigInt != 0:
+		return "bigint"
 	case flags&checker.TypeFlagsVoid != 0:
 		return "void"
 	case flags&checker.TypeFlagsUndefined != 0:
@@ -152,6 +287,12 @@ func (e *Emitter) typeKindToString(t *checker.Type) string {
 		return "typeParameter"
 	case flags&checker.TypeFlagsLiteral != 0:
 		return "literal"
+	case flags&checker.TypeFlagsStringLiteral != 0:
+		return "stringLiteral"
+	case flags&checker.TypeFlagsNumberLiteral != 0:
+		return "numberLiteral"
+	case flags&checker.TypeFlagsBooleanLiteral != 0:
+		return "booleanLiteral"
 	default:
 		return "unknown"
 	}
@@ -174,13 +315,17 @@ func (e *Emitter) symbolKindToString(sym *ast.Symbol) string {
 		return "method"
 	case flags&ast.SymbolFlagsProperty != 0:
 		return "property"
+	case flags&ast.SymbolFlagsEnum != 0:
+		return "enum"
+	case flags&ast.SymbolFlagsModule != 0:
+		return "module"
+	case flags&ast.SymbolFlagsTypeAlias != 0:
+		return "typeAlias"
+	case flags&ast.SymbolFlagsAlias != 0:
+		return "alias"
 	default:
 		return "unknown"
 	}
-}
-
-func (e *Emitter) SetChecker(c *checker.Checker) {
-	e.checker = c
 }
 
 func (p *Program) ToJSON() ([]byte, error) {

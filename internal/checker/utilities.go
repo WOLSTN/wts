@@ -7,16 +7,16 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/binder"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/diagnostics"
-	"github.com/microsoft/typescript-go/internal/jsnum"
-	"github.com/microsoft/typescript-go/internal/module"
-	"github.com/microsoft/typescript-go/internal/printer"
-	"github.com/microsoft/typescript-go/internal/scanner"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/binder"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/diagnostics"
+	"github.com/wolstn/wts/internal/jsnum"
+	"github.com/wolstn/wts/internal/module"
+	"github.com/wolstn/wts/internal/printer"
+	"github.com/wolstn/wts/internal/scanner"
+	"github.com/wolstn/wts/internal/tspath"
 )
 
 func NewDiagnosticForNode(node *ast.Node, message *diagnostics.Message, args ...any) *ast.Diagnostic {

@@ -5,13 +5,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/astnav"
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/printer"
-	"github.com/microsoft/typescript-go/internal/scanner"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/astnav"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/printer"
+	"github.com/wolstn/wts/internal/scanner"
 )
 
 func (c *Checker) GetSymbolsInScope(location *ast.Node, meaning ast.SymbolFlags) []*ast.Symbol {

@@ -7,16 +7,16 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/diagnostics"
-	"github.com/microsoft/typescript-go/internal/glob"
-	"github.com/microsoft/typescript-go/internal/locale"
-	"github.com/microsoft/typescript-go/internal/module"
-	"github.com/microsoft/typescript-go/internal/outputpaths"
-	"github.com/microsoft/typescript-go/internal/tspath"
-	"github.com/microsoft/typescript-go/internal/vfs"
-	"github.com/microsoft/typescript-go/internal/vfs/vfsmatch"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/diagnostics"
+	"github.com/wolstn/wts/internal/glob"
+	"github.com/wolstn/wts/internal/locale"
+	"github.com/wolstn/wts/internal/module"
+	"github.com/wolstn/wts/internal/outputpaths"
+	"github.com/wolstn/wts/internal/tspath"
+	"github.com/wolstn/wts/internal/vfs"
+	"github.com/wolstn/wts/internal/vfs/vfsmatch"
 )
 
 const (

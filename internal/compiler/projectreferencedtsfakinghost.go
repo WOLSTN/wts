@@ -4,13 +4,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/module"
-	"github.com/microsoft/typescript-go/internal/symlinks"
-	"github.com/microsoft/typescript-go/internal/tspath"
-	"github.com/microsoft/typescript-go/internal/vfs"
-	"github.com/microsoft/typescript-go/internal/vfs/cachedvfs"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/module"
+	"github.com/wolstn/wts/internal/symlinks"
+	"github.com/wolstn/wts/internal/tspath"
+	"github.com/wolstn/wts/internal/vfs"
+	"github.com/wolstn/wts/internal/vfs/cachedvfs"
 )
 
 type projectReferenceDtsFakingHost struct {

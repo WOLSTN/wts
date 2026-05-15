@@ -3,9 +3,9 @@ package checker
 import (
 	"slices"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/printer"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/printer"
 )
 
 func (c *Checker) IsTypeSymbolAccessible(typeSymbol *ast.Symbol, enclosingDeclaration *ast.Node) bool {

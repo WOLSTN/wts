@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/locale"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/locale"
 	"golang.org/x/text/language"
 )
 

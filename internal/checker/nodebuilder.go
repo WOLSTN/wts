@@ -1,10 +1,10 @@
 package checker
 
 import (
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/nodebuilder"
-	"github.com/microsoft/typescript-go/internal/printer"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/nodebuilder"
+	"github.com/wolstn/wts/internal/printer"
 )
 
 type NodeBuilder struct {

@@ -3,9 +3,9 @@ package evaluator
 import (
 	"strings"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/jsnum"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/jsnum"
 )
 
 type Result struct {

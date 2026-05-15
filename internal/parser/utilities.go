@@ -3,9 +3,9 @@ package parser
 import (
 	"slices"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/scanner"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/scanner"
 )
 
 func getLanguageVariant(scriptKind core.ScriptKind) core.LanguageVariant {

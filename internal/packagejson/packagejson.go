@@ -1,8 +1,8 @@
 package packagejson
 
 import (
-	"github.com/microsoft/typescript-go/internal/collections"
-	json "github.com/microsoft/typescript-go/internal/json"
+	"github.com/wolstn/wts/internal/collections"
+	json "github.com/wolstn/wts/internal/json"
 )
 
 type HeaderFields struct {

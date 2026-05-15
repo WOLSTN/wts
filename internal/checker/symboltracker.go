@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/nodebuilder"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/nodebuilder"
 )
 
 type SymbolTrackerImpl struct {

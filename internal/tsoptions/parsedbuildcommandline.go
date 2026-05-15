@@ -3,10 +3,10 @@ package tsoptions
 import (
 	"sync"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/locale"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/locale"
+	"github.com/wolstn/wts/internal/tspath"
 )
 
 type ParsedBuildCommandLine struct {

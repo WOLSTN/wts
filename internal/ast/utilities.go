@@ -7,9 +7,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/tspath"
 )
 
 // Atomic ids

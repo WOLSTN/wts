@@ -8,8 +8,8 @@ import (
 	"unicode/utf16"
 	"unsafe"
 
-	"github.com/microsoft/typescript-go/internal/tspath"
-	"github.com/microsoft/typescript-go/internal/vfs"
+	"github.com/wolstn/wts/internal/tspath"
+	"github.com/wolstn/wts/internal/vfs"
 )
 
 type Common struct {

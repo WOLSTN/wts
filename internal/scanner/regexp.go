@@ -7,10 +7,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/diagnostics"
-	"github.com/microsoft/typescript-go/internal/stringutil"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/diagnostics"
+	"github.com/wolstn/wts/internal/stringutil"
 )
 
 type regularExpressionFlags int32

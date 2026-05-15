@@ -3,11 +3,11 @@ package module
 import (
 	"strings"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/diagnostics"
-	"github.com/microsoft/typescript-go/internal/semver"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/diagnostics"
+	"github.com/wolstn/wts/internal/semver"
+	"github.com/wolstn/wts/internal/tspath"
 )
 
 var typeScriptVersion = semver.MustParse(core.Version())

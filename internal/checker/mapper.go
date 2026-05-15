@@ -3,7 +3,7 @@ package checker
 import (
 	"slices"
 
-	"github.com/microsoft/typescript-go/internal/core"
+	"github.com/wolstn/wts/internal/core"
 )
 
 // TypeMapperKind

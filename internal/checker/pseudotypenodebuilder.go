@@ -1,11 +1,11 @@
 package checker
 
 import (
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/nodebuilder"
-	"github.com/microsoft/typescript-go/internal/printer"
-	"github.com/microsoft/typescript-go/internal/pseudochecker"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/nodebuilder"
+	"github.com/wolstn/wts/internal/printer"
+	"github.com/wolstn/wts/internal/pseudochecker"
 )
 
 // pseudoTypeToNodeWithCheckerFallback is like pseudoTypeToNode but when the top-level pseudo type

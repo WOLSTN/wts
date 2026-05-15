@@ -3,12 +3,12 @@ package checker
 import (
 	"fmt"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/jsnum"
-	"github.com/microsoft/typescript-go/internal/nodebuilder"
-	"github.com/microsoft/typescript-go/internal/scanner"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/jsnum"
+	"github.com/wolstn/wts/internal/nodebuilder"
+	"github.com/wolstn/wts/internal/scanner"
 )
 
 // isExpanding returns whether the node builder context is operating in hover-expansion mode.

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/diagnostics"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/diagnostics"
 )
 
 var OptionsDeclarations = slices.Concat(commonOptionsWithBuild, optionsForCompiler)

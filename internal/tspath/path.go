@@ -7,7 +7,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/microsoft/typescript-go/internal/stringutil"
+	"github.com/wolstn/wts/internal/stringutil"
 )
 
 type Path string

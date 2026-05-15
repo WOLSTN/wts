@@ -1,8 +1,8 @@
 package packagejson
 
 import (
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/json"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/json"
 )
 
 type objectKind int8

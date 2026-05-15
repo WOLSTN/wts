@@ -3,11 +3,11 @@ package compiler
 import (
 	"maps"
 
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/tracing"
-	"github.com/microsoft/typescript-go/internal/tsoptions"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/tracing"
+	"github.com/wolstn/wts/internal/tsoptions"
+	"github.com/wolstn/wts/internal/tspath"
 )
 
 type projectReferenceParseTask struct {

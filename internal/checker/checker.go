@@ -13,21 +13,21 @@ import (
 	"sync/atomic"
 	"unicode/utf8"
 
-	"github.com/microsoft/typescript-go/internal/ast"
-	"github.com/microsoft/typescript-go/internal/binder"
-	"github.com/microsoft/typescript-go/internal/collections"
-	"github.com/microsoft/typescript-go/internal/core"
-	"github.com/microsoft/typescript-go/internal/debug"
-	"github.com/microsoft/typescript-go/internal/diagnostics"
-	"github.com/microsoft/typescript-go/internal/evaluator"
-	"github.com/microsoft/typescript-go/internal/jsnum"
-	"github.com/microsoft/typescript-go/internal/module"
-	"github.com/microsoft/typescript-go/internal/modulespecifiers"
-	"github.com/microsoft/typescript-go/internal/scanner"
-	"github.com/microsoft/typescript-go/internal/stringutil"
-	"github.com/microsoft/typescript-go/internal/tracing"
-	"github.com/microsoft/typescript-go/internal/tsoptions"
-	"github.com/microsoft/typescript-go/internal/tspath"
+	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/binder"
+	"github.com/wolstn/wts/internal/collections"
+	"github.com/wolstn/wts/internal/core"
+	"github.com/wolstn/wts/internal/debug"
+	"github.com/wolstn/wts/internal/diagnostics"
+	"github.com/wolstn/wts/internal/evaluator"
+	"github.com/wolstn/wts/internal/jsnum"
+	"github.com/wolstn/wts/internal/module"
+	"github.com/wolstn/wts/internal/modulespecifiers"
+	"github.com/wolstn/wts/internal/scanner"
+	"github.com/wolstn/wts/internal/stringutil"
+	"github.com/wolstn/wts/internal/tracing"
+	"github.com/wolstn/wts/internal/tsoptions"
+	"github.com/wolstn/wts/internal/tspath"
 	"github.com/zeebo/xxh3"
 )
 
@@ -1297,7 +1297,7 @@ func (c *Checker) initializeChecker() {
 			}
 			for _, symbol := range file.Locals {
 				// We defer merging of global ambient module declarations since they may require other global symbols
-				// and types to be resolved. See https://github.com/microsoft/typescript-go/issues/2953.
+				// and types to be resolved. See https://github.com/wolstn/wts/issues/2953.
 				if symbol.Flags&ast.SymbolFlagsModule != 0 && ast.IsAmbientModuleSymbolName(symbol.Name) {
 					ambientModuleSymbols = append(ambientModuleSymbols, symbol)
 				} else {
@@ -18061,7 +18061,7 @@ func (c *Checker) isGlobalSymbolConstructor(node *ast.Node) bool {
 func (c *Checker) widenTypeForVariableLikeDeclaration(t *Type, declaration *ast.Node, reportErrors bool) *Type {
 	if t != nil {
 		// This special case is required for backwards compatibility with libraries that merge a `symbol` property into `SymbolConstructor`.
-		// See https://github.com/microsoft/typescript-go/issues/1212
+		// See https://github.com/wolstn/wts/issues/1212
 		if t.flags&TypeFlagsESSymbol != 0 && c.isGlobalSymbolConstructor(declaration.Parent) {
 			t = c.getESSymbolLikeTypeForNode(declaration)
 		}
@@ -21879,7 +21879,7 @@ func (c *Checker) getNamedMembers(members ast.SymbolTable, container *ast.Symbol
 	}
 	// For classes and interfaces, we store explicitly declared members ahead of inherited members. This ensures we process
 	// explicitly declared members first in type relations, which is beneficial because explicitly declared members are more
-	// likely to contain discriminating differences. See for example https://github.com/microsoft/typescript-go/issues/1968.
+	// likely to contain discriminating differences. See for example https://github.com/wolstn/wts/issues/1968.
 	result := make([]*ast.Symbol, 0, len(members))
 	var containedCount int
 	if container != nil && container.Flags&(ast.SymbolFlagsClass|ast.SymbolFlagsInterface) != 0 {
