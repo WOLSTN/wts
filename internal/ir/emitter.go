@@ -32,8 +32,18 @@ type Program struct {
 }
 
 type File struct {
-	Path   string `json:"path"`
-	Source string `json:"source,omitempty"`
+	Path   string     `json:"path"`
+	Source string     `json:"source,omitempty"`
+	Nodes  []*ASTNode `json:"nodes,omitempty"`
+}
+
+type ASTNode struct {
+	Kind     string     `json:"kind"`
+	Pos      int        `json:"pos"`
+	End      int        `json:"end"`
+	Type     string     `json:"type,omitempty"`
+	Symbol   string     `json:"symbol,omitempty"`
+	Children []*ASTNode `json:"children,omitempty"`
 }
 
 type Type struct {
@@ -424,6 +434,7 @@ func (e *Emitter) emitSourceFiles() {
 			file.Source = string(sf.Text())
 		}
 		e.irProgram.Files = append(e.irProgram.Files, file)
+		file.Nodes = e.emitNodeTree(sf)
 		e.emitFileImports(sf)
 		e.emitFileExports(sf)
 	}
@@ -869,6 +880,44 @@ func (e *Emitter) emitVariableFromSymbol(sym *ast.Symbol) {
 	}
 
 	e.irProgram.Variables = append(e.irProgram.Variables, v)
+}
+
+func (e *Emitter) emitNodeTree(sf *ast.SourceFile) []*ASTNode {
+	var nodes []*ASTNode
+	for _, stmt := range sf.Statements.Nodes {
+		if n := e.emitASTNode(stmt); n != nil {
+			nodes = append(nodes, n)
+		}
+	}
+	return nodes
+}
+
+func (e *Emitter) emitASTNode(node *ast.Node) *ASTNode {
+	if node == nil {
+		return nil
+	}
+
+	n := &ASTNode{
+		Kind: node.Kind.String(),
+		Pos:  node.Loc.Pos(),
+		End:  node.Loc.End(),
+	}
+
+	if t := e.checker.GetTypeOfNode(node); t != nil {
+		n.Type = e.getOrCreateTypeId(t)
+	}
+	if s := e.checker.GetResolvedSymbolOfNode(node); s != nil {
+		n.Symbol = e.getOrCreateSymbolId(s)
+	}
+
+	node.ForEachChild(func(child *ast.Node) bool {
+		if c := e.emitASTNode(child); c != nil {
+			n.Children = append(n.Children, c)
+		}
+		return false
+	})
+
+	return n
 }
 
 func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {

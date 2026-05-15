@@ -61,3 +61,15 @@ func (c *Checker) GetMergedSymbol(symbol *ast.Symbol) *ast.Symbol {
 func (c *Checker) GetEnumMemberValue(node *ast.Node) any {
 	return c.getEnumMemberValue(node).Value
 }
+
+func (c *Checker) GetResolvedTypeOfNode(node *ast.Node) *Type {
+	return c.typeNodeLinks.Get(node).resolvedType
+}
+
+func (c *Checker) GetResolvedSymbolOfNode(node *ast.Node) *ast.Symbol {
+	return c.symbolNodeLinks.Get(node).resolvedSymbol
+}
+
+func (c *Checker) GetTypeOfNode(node *ast.Node) *Type {
+	return c.getTypeOfNode(node)
+}
