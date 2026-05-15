@@ -517,7 +517,10 @@ func (c *Checker) IsDeclarationUsed(
 ) bool {
 	if jsxElementsPresent && jsxModeNeedsExplicitImport {
 		jsxNamespace := c.getJsxNamespace(sourceFile.AsNode())
-		jsxFragmentFactory := c.GetJsxFragmentFactory(sourceFile.AsNode())
+		var jsxFragmentFactory string
+		if entity := c.getJsxFragmentFactoryEntity(sourceFile.AsNode()); entity != nil {
+			jsxFragmentFactory = ast.GetFirstIdentifier(entity).Text()
+		}
 		identifierText := identifier.Text
 		if identifierText == jsxNamespace {
 			return true

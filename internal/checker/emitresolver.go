@@ -175,7 +175,7 @@ func (r *EmitResolver) determineIfDeclarationIsVisible(node *ast.Node) bool {
 		ast.KindSetAccessor,
 		ast.KindMethodDeclaration,
 		ast.KindMethodSignature:
-		if r.checker.GetEffectiveDeclarationFlags(node, ast.ModifierFlagsPrivate|ast.ModifierFlagsProtected) != 0 {
+		if r.checker.getEffectiveDeclarationFlags(node, ast.ModifierFlagsPrivate|ast.ModifierFlagsProtected) != 0 {
 			// Private/protected properties/methods are not visible
 			return false
 		}
@@ -1110,14 +1110,14 @@ func (r *EmitResolver) GetEffectiveDeclarationFlags(node *ast.Node, flags ast.Mo
 	// node = emitContext.ParseNode(node)
 	r.checkerMu.Lock()
 	defer r.checkerMu.Unlock()
-	return r.checker.GetEffectiveDeclarationFlags(node, flags)
+	return r.checker.getEffectiveDeclarationFlags(node, flags)
 }
 
 func (r *EmitResolver) GetResolutionModeOverride(node *ast.Node) core.ResolutionMode {
 	// node = emitContext.ParseNode(node)
 	r.checkerMu.Lock()
 	defer r.checkerMu.Unlock()
-	return r.checker.GetResolutionModeOverride(node.AsImportAttributes(), false)
+	return r.checker.getResolutionModeOverride(node.AsImportAttributes(), false)
 }
 
 func (r *EmitResolver) GetConstantValue(node *ast.Node) any {
