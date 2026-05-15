@@ -27,6 +27,8 @@ type Program struct {
 	Namespaces  []*Namespace `json:"namespaces,omitempty"`
 	Imports     []*Import    `json:"imports,omitempty"`
 	Exports     []*Export    `json:"exports,omitempty"`
+	Functions   []*Function  `json:"functions,omitempty"`
+	Variables   []*Variable  `json:"variables,omitempty"`
 }
 
 type File struct {
@@ -205,6 +207,24 @@ type Export struct {
 	IsDefault bool   `json:"isDefault,omitempty"`
 }
 
+type Function struct {
+	Name       string   `json:"name"`
+	Symbol     string   `json:"symbol"`
+	Parameters []Param  `json:"parameters,omitempty"`
+	ReturnType string   `json:"returnType,omitempty"`
+	TypeParams []string `json:"typeParams,omitempty"`
+	Signature  string   `json:"signature,omitempty"`
+	IsAsync    bool     `json:"isAsync,omitempty"`
+	IsGenerator bool    `json:"isGenerator,omitempty"`
+}
+
+type Variable struct {
+	Name    string `json:"name"`
+	Symbol  string `json:"symbol"`
+	Type    string `json:"type,omitempty"`
+	IsConst bool   `json:"isConst,omitempty"`
+}
+
 type Emitter struct {
 	program     *compiler.Program
 	checker     *checker.Checker
@@ -373,6 +393,10 @@ func (e *Emitter) emitSourceFiles() {
 			if sym.Name != "globalThis" {
 				e.emitNamespaceFromSymbol(sym)
 			}
+		case flags&ast.SymbolFlagsFunction != 0:
+			e.emitFunctionFromSymbol(sym)
+		case flags&ast.SymbolFlagsVariable != 0:
+			e.emitVariableFromSymbol(sym)
 		}
 	}
 }
@@ -743,6 +767,57 @@ func (e *Emitter) emitNamespaceFromSymbol(sym *ast.Symbol) {
 	}
 
 	e.irProgram.Namespaces = append(e.irProgram.Namespaces, irNs)
+}
+
+func (e *Emitter) emitFunctionFromSymbol(sym *ast.Symbol) {
+	fn := &Function{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if len(sym.Declarations) > 0 {
+		decl := sym.Declarations[0]
+		flags := ast.GetFunctionFlags(decl)
+		fn.IsAsync = flags&ast.FunctionFlagsAsync != 0
+		fn.IsGenerator = flags&ast.FunctionFlagsGenerator != 0
+	}
+
+	sig := e.checker.GetResolvedSignature(sym.Declarations[0])
+	if sig != nil {
+		fn.Signature = e.getOrCreateSignatureId(sig)
+		for _, param := range sig.Parameters() {
+			p := Param{Name: param.Name}
+			if t := e.checker.GetTypeOfSymbol(param); t != nil {
+				p.Type = e.getOrCreateTypeId(t)
+			}
+			fn.Parameters = append(fn.Parameters, p)
+		}
+		if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
+			fn.ReturnType = e.getOrCreateTypeId(ret)
+		}
+		for _, tp := range sig.TypeParameters() {
+			fn.TypeParams = append(fn.TypeParams, e.getOrCreateTypeId(tp))
+		}
+	}
+
+	e.irProgram.Functions = append(e.irProgram.Functions, fn)
+}
+
+func (e *Emitter) emitVariableFromSymbol(sym *ast.Symbol) {
+	v := &Variable{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if t := e.checker.GetTypeOfSymbol(sym); t != nil {
+		v.Type = e.getOrCreateTypeId(t)
+	}
+
+	if len(sym.Declarations) > 0 {
+		v.IsConst = ast.HasSyntacticModifier(sym.Declarations[0], ast.ModifierFlagsConst)
+	}
+
+	e.irProgram.Variables = append(e.irProgram.Variables, v)
 }
 
 func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
