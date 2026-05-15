@@ -1,0 +1,2027 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "F:/WOLSTN/wts/test/classes.ts",
+      "source": "interface IPoint {\n  x: number;\n  y: number;\n  distance(): number;\n}\n\ninterface IShape {\n  name: string;\n  area(): number;\n}\n\nclass Point implements IPoint {\n  public x: number;\n  public y: number;\n\n  constructor(x: number, y: number) {\n    this.x = x;\n    this.y = y;\n  }\n\n  distance(): number {\n    return Math.sqrt(this.x * this.x + this.y * this.y);\n  }\n}\n\nclass Rectangle extends Point implements IShape {\n  private width: number;\n  protected height: number;\n  readonly name: string = \"Rectangle\";\n\n  constructor(x: number, y: number, width: number, height: number) {\n    super(x, y);\n    this.width = width;\n    this.height = height;\n  }\n\n  area(): number {\n    return this.width * this.height;\n  }\n}\n\nabstract class Shape {\n  abstract getArea(): number;\n  \n  describe(): string {\n    return \"A shape\";\n  }\n}\n\nconst p = new Point(1, 2);\nconst r = new Rectangle(0, 0, 10, 20);\n",
+      "rootNode": {
+        "kind": "KindSourceFile",
+        "pos": 0,
+        "end": 882,
+        "children": [
+          {
+            "kind": "KindInterfaceDeclaration",
+            "pos": 0,
+            "end": 68,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 9,
+                "end": 16,
+                "symbol": "s1",
+                "type": "t2",
+                "text": "IPoint"
+              },
+              {
+                "kind": "KindPropertySignature",
+                "pos": 18,
+                "end": 31,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 18,
+                    "end": 22,
+                    "symbol": "s2",
+                    "type": "t3",
+                    "text": "x"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 23,
+                    "end": 30,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t3"
+              },
+              {
+                "kind": "KindPropertySignature",
+                "pos": 31,
+                "end": 44,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 31,
+                    "end": 35,
+                    "symbol": "s3",
+                    "type": "t3",
+                    "text": "y"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 36,
+                    "end": 43,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t3"
+              },
+              {
+                "kind": "KindMethodSignature",
+                "pos": 44,
+                "end": 66,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 44,
+                    "end": 55,
+                    "symbol": "s4",
+                    "type": "t4",
+                    "text": "distance"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 58,
+                    "end": 65,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t4"
+              }
+            ],
+            "type": "t2"
+          },
+          {
+            "kind": "KindInterfaceDeclaration",
+            "pos": 68,
+            "end": 124,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 79,
+                "end": 86,
+                "symbol": "s5",
+                "type": "t5",
+                "text": "IShape"
+              },
+              {
+                "kind": "KindPropertySignature",
+                "pos": 88,
+                "end": 104,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 88,
+                    "end": 95,
+                    "symbol": "s6",
+                    "type": "t6",
+                    "text": "name"
+                  },
+                  {
+                    "kind": "KindStringKeyword",
+                    "pos": 96,
+                    "end": 103,
+                    "type": "t6"
+                  }
+                ],
+                "type": "t6"
+              },
+              {
+                "kind": "KindMethodSignature",
+                "pos": 104,
+                "end": 122,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 104,
+                    "end": 111,
+                    "symbol": "s7",
+                    "type": "t7",
+                    "text": "area"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 114,
+                    "end": 121,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t7"
+              }
+            ],
+            "type": "t5"
+          },
+          {
+            "kind": "KindClassDeclaration",
+            "pos": 124,
+            "end": 359,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 131,
+                "end": 137,
+                "symbol": "s8",
+                "type": "t8",
+                "text": "Point"
+              },
+              {
+                "kind": "KindHeritageClause",
+                "pos": 137,
+                "end": 155,
+                "children": [
+                  {
+                    "kind": "KindExpressionWithTypeArguments",
+                    "pos": 148,
+                    "end": 155,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 148,
+                        "end": 155,
+                        "symbol": "s1",
+                        "type": "t1",
+                        "text": "IPoint"
+                      }
+                    ],
+                    "type": "t2"
+                  }
+                ],
+                "type": "t1"
+              },
+              {
+                "kind": "KindPropertyDeclaration",
+                "pos": 157,
+                "end": 177,
+                "children": [
+                  {
+                    "kind": "KindPublicKeyword",
+                    "pos": 157,
+                    "end": 166,
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 166,
+                    "end": 168,
+                    "symbol": "s9",
+                    "type": "t3",
+                    "text": "x"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 169,
+                    "end": 176,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t3"
+              },
+              {
+                "kind": "KindPropertyDeclaration",
+                "pos": 177,
+                "end": 197,
+                "children": [
+                  {
+                    "kind": "KindPublicKeyword",
+                    "pos": 177,
+                    "end": 186,
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 186,
+                    "end": 188,
+                    "symbol": "s10",
+                    "type": "t3",
+                    "text": "y"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 189,
+                    "end": 196,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t3"
+              },
+              {
+                "kind": "KindConstructor",
+                "pos": 197,
+                "end": 272,
+                "children": [
+                  {
+                    "kind": "KindParameter",
+                    "pos": 213,
+                    "end": 222,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 213,
+                        "end": 214,
+                        "symbol": "s11",
+                        "type": "t3",
+                        "text": "x"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 215,
+                        "end": 222,
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindParameter",
+                    "pos": 223,
+                    "end": 233,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 223,
+                        "end": 225,
+                        "symbol": "s12",
+                        "type": "t3",
+                        "text": "y"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 226,
+                        "end": 233,
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindBlock",
+                    "pos": 234,
+                    "end": 272,
+                    "children": [
+                      {
+                        "kind": "KindExpressionStatement",
+                        "pos": 236,
+                        "end": 252,
+                        "children": [
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 236,
+                            "end": 251,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 236,
+                                "end": 247,
+                                "children": [
+                                  {
+                                    "kind": "KindThisKeyword",
+                                    "pos": 236,
+                                    "end": 245,
+                                    "symbol": "s8",
+                                    "type": "t10"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 246,
+                                    "end": 247,
+                                    "symbol": "s9",
+                                    "type": "t3",
+                                    "text": "x"
+                                  }
+                                ],
+                                "symbol": "s9",
+                                "type": "t3"
+                              },
+                              {
+                                "kind": "KindEqualsToken",
+                                "pos": 247,
+                                "end": 249,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 249,
+                                "end": 251,
+                                "symbol": "s11",
+                                "type": "t3",
+                                "text": "x"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindExpressionStatement",
+                        "pos": 252,
+                        "end": 268,
+                        "children": [
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 252,
+                            "end": 267,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 252,
+                                "end": 263,
+                                "children": [
+                                  {
+                                    "kind": "KindThisKeyword",
+                                    "pos": 252,
+                                    "end": 261,
+                                    "symbol": "s8",
+                                    "type": "t10"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 262,
+                                    "end": 263,
+                                    "symbol": "s10",
+                                    "type": "t3",
+                                    "text": "y"
+                                  }
+                                ],
+                                "symbol": "s10",
+                                "type": "t3"
+                              },
+                              {
+                                "kind": "KindEqualsToken",
+                                "pos": 263,
+                                "end": 265,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 265,
+                                "end": 267,
+                                "symbol": "s12",
+                                "type": "t3",
+                                "text": "y"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              },
+              {
+                "kind": "KindMethodDeclaration",
+                "pos": 272,
+                "end": 357,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 272,
+                    "end": 284,
+                    "symbol": "s13",
+                    "type": "t11",
+                    "text": "distance"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 287,
+                    "end": 294,
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindBlock",
+                    "pos": 294,
+                    "end": 357,
+                    "children": [
+                      {
+                        "kind": "KindReturnStatement",
+                        "pos": 296,
+                        "end": 353,
+                        "children": [
+                          {
+                            "kind": "KindCallExpression",
+                            "pos": 307,
+                            "end": 352,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 307,
+                                "end": 317,
+                                "children": [
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 307,
+                                    "end": 312,
+                                    "type": "t1",
+                                    "text": "Math"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 313,
+                                    "end": 317,
+                                    "type": "t1",
+                                    "text": "sqrt"
+                                  }
+                                ],
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindBinaryExpression",
+                                "pos": 318,
+                                "end": 351,
+                                "children": [
+                                  {
+                                    "kind": "KindBinaryExpression",
+                                    "pos": 318,
+                                    "end": 333,
+                                    "children": [
+                                      {
+                                        "kind": "KindPropertyAccessExpression",
+                                        "pos": 318,
+                                        "end": 324,
+                                        "children": [
+                                          {
+                                            "kind": "KindThisKeyword",
+                                            "pos": 318,
+                                            "end": 322,
+                                            "symbol": "s8",
+                                            "type": "t10"
+                                          },
+                                          {
+                                            "kind": "KindIdentifier",
+                                            "pos": 323,
+                                            "end": 324,
+                                            "symbol": "s9",
+                                            "type": "t3",
+                                            "text": "x"
+                                          }
+                                        ],
+                                        "symbol": "s9",
+                                        "type": "t3"
+                                      },
+                                      {
+                                        "kind": "KindAsteriskToken",
+                                        "pos": 324,
+                                        "end": 326,
+                                        "type": "t1"
+                                      },
+                                      {
+                                        "kind": "KindPropertyAccessExpression",
+                                        "pos": 326,
+                                        "end": 333,
+                                        "children": [
+                                          {
+                                            "kind": "KindThisKeyword",
+                                            "pos": 326,
+                                            "end": 331,
+                                            "symbol": "s8",
+                                            "type": "t10"
+                                          },
+                                          {
+                                            "kind": "KindIdentifier",
+                                            "pos": 332,
+                                            "end": 333,
+                                            "symbol": "s9",
+                                            "type": "t3",
+                                            "text": "x"
+                                          }
+                                        ],
+                                        "symbol": "s9",
+                                        "type": "t3"
+                                      }
+                                    ],
+                                    "type": "t3"
+                                  },
+                                  {
+                                    "kind": "KindPlusToken",
+                                    "pos": 333,
+                                    "end": 335,
+                                    "type": "t1"
+                                  },
+                                  {
+                                    "kind": "KindBinaryExpression",
+                                    "pos": 335,
+                                    "end": 351,
+                                    "children": [
+                                      {
+                                        "kind": "KindPropertyAccessExpression",
+                                        "pos": 335,
+                                        "end": 342,
+                                        "children": [
+                                          {
+                                            "kind": "KindThisKeyword",
+                                            "pos": 335,
+                                            "end": 340,
+                                            "symbol": "s8",
+                                            "type": "t10"
+                                          },
+                                          {
+                                            "kind": "KindIdentifier",
+                                            "pos": 341,
+                                            "end": 342,
+                                            "symbol": "s10",
+                                            "type": "t3",
+                                            "text": "y"
+                                          }
+                                        ],
+                                        "symbol": "s10",
+                                        "type": "t3"
+                                      },
+                                      {
+                                        "kind": "KindAsteriskToken",
+                                        "pos": 342,
+                                        "end": 344,
+                                        "type": "t1"
+                                      },
+                                      {
+                                        "kind": "KindPropertyAccessExpression",
+                                        "pos": 344,
+                                        "end": 351,
+                                        "children": [
+                                          {
+                                            "kind": "KindThisKeyword",
+                                            "pos": 344,
+                                            "end": 349,
+                                            "symbol": "s8",
+                                            "type": "t10"
+                                          },
+                                          {
+                                            "kind": "KindIdentifier",
+                                            "pos": 350,
+                                            "end": 351,
+                                            "symbol": "s10",
+                                            "type": "t3",
+                                            "text": "y"
+                                          }
+                                        ],
+                                        "symbol": "s10",
+                                        "type": "t3"
+                                      }
+                                    ],
+                                    "type": "t3"
+                                  }
+                                ],
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t1"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t11"
+              }
+            ],
+            "type": "t8"
+          },
+          {
+            "kind": "KindClassDeclaration",
+            "pos": 359,
+            "end": 706,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 366,
+                "end": 376,
+                "symbol": "s14",
+                "type": "t12",
+                "text": "Rectangle"
+              },
+              {
+                "kind": "KindHeritageClause",
+                "pos": 376,
+                "end": 390,
+                "children": [
+                  {
+                    "kind": "KindExpressionWithTypeArguments",
+                    "pos": 384,
+                    "end": 390,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 384,
+                        "end": 390,
+                        "symbol": "s8",
+                        "type": "t9",
+                        "text": "Point"
+                      }
+                    ],
+                    "type": "t14"
+                  }
+                ],
+                "type": "t1"
+              },
+              {
+                "kind": "KindHeritageClause",
+                "pos": 390,
+                "end": 408,
+                "children": [
+                  {
+                    "kind": "KindExpressionWithTypeArguments",
+                    "pos": 401,
+                    "end": 408,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 401,
+                        "end": 408,
+                        "symbol": "s5",
+                        "type": "t1",
+                        "text": "IShape"
+                      }
+                    ],
+                    "type": "t5"
+                  }
+                ],
+                "type": "t1"
+              },
+              {
+                "kind": "KindPropertyDeclaration",
+                "pos": 410,
+                "end": 435,
+                "children": [
+                  {
+                    "kind": "KindPrivateKeyword",
+                    "pos": 410,
+                    "end": 420,
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 420,
+                    "end": 426,
+                    "symbol": "s15",
+                    "type": "t3",
+                    "text": "width"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 427,
+                    "end": 434,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t3"
+              },
+              {
+                "kind": "KindPropertyDeclaration",
+                "pos": 435,
+                "end": 463,
+                "children": [
+                  {
+                    "kind": "KindProtectedKeyword",
+                    "pos": 435,
+                    "end": 447,
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 447,
+                    "end": 454,
+                    "symbol": "s16",
+                    "type": "t3",
+                    "text": "height"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 455,
+                    "end": 462,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t3"
+              },
+              {
+                "kind": "KindPropertyDeclaration",
+                "pos": 463,
+                "end": 502,
+                "children": [
+                  {
+                    "kind": "KindReadonlyKeyword",
+                    "pos": 463,
+                    "end": 474,
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 474,
+                    "end": 479,
+                    "symbol": "s17",
+                    "type": "t6",
+                    "text": "name"
+                  },
+                  {
+                    "kind": "KindStringKeyword",
+                    "pos": 480,
+                    "end": 487,
+                    "type": "t6"
+                  },
+                  {
+                    "kind": "KindStringLiteral",
+                    "pos": 489,
+                    "end": 501,
+                    "type": "t15",
+                    "text": "Rectangle"
+                  }
+                ],
+                "type": "t6"
+              },
+              {
+                "kind": "KindConstructor",
+                "pos": 502,
+                "end": 643,
+                "children": [
+                  {
+                    "kind": "KindParameter",
+                    "pos": 518,
+                    "end": 527,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 518,
+                        "end": 519,
+                        "symbol": "s18",
+                        "type": "t3",
+                        "text": "x"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 520,
+                        "end": 527,
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindParameter",
+                    "pos": 528,
+                    "end": 538,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 528,
+                        "end": 530,
+                        "symbol": "s19",
+                        "type": "t3",
+                        "text": "y"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 531,
+                        "end": 538,
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindParameter",
+                    "pos": 539,
+                    "end": 553,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 539,
+                        "end": 545,
+                        "symbol": "s20",
+                        "type": "t3",
+                        "text": "width"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 546,
+                        "end": 553,
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindParameter",
+                    "pos": 554,
+                    "end": 569,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 554,
+                        "end": 561,
+                        "symbol": "s21",
+                        "type": "t3",
+                        "text": "height"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 562,
+                        "end": 569,
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindBlock",
+                    "pos": 570,
+                    "end": 643,
+                    "children": [
+                      {
+                        "kind": "KindExpressionStatement",
+                        "pos": 572,
+                        "end": 589,
+                        "children": [
+                          {
+                            "kind": "KindCallExpression",
+                            "pos": 572,
+                            "end": 588,
+                            "children": [
+                              {
+                                "kind": "KindSuperKeyword",
+                                "pos": 572,
+                                "end": 582,
+                                "symbol": "s8",
+                                "type": "t9"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 583,
+                                "end": 584,
+                                "symbol": "s18",
+                                "type": "t3",
+                                "text": "x"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 585,
+                                "end": 587,
+                                "symbol": "s19",
+                                "type": "t3",
+                                "text": "y"
+                              }
+                            ],
+                            "type": "t16"
+                          }
+                        ],
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindExpressionStatement",
+                        "pos": 589,
+                        "end": 613,
+                        "children": [
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 589,
+                            "end": 612,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 589,
+                                "end": 604,
+                                "children": [
+                                  {
+                                    "kind": "KindThisKeyword",
+                                    "pos": 589,
+                                    "end": 598,
+                                    "symbol": "s14",
+                                    "type": "t17"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 599,
+                                    "end": 604,
+                                    "symbol": "s15",
+                                    "type": "t3",
+                                    "text": "width"
+                                  }
+                                ],
+                                "symbol": "s15",
+                                "type": "t3"
+                              },
+                              {
+                                "kind": "KindEqualsToken",
+                                "pos": 604,
+                                "end": 606,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 606,
+                                "end": 612,
+                                "symbol": "s20",
+                                "type": "t3",
+                                "text": "width"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindExpressionStatement",
+                        "pos": 613,
+                        "end": 639,
+                        "children": [
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 613,
+                            "end": 638,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 613,
+                                "end": 629,
+                                "children": [
+                                  {
+                                    "kind": "KindThisKeyword",
+                                    "pos": 613,
+                                    "end": 622,
+                                    "symbol": "s14",
+                                    "type": "t17"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 623,
+                                    "end": 629,
+                                    "symbol": "s16",
+                                    "type": "t3",
+                                    "text": "height"
+                                  }
+                                ],
+                                "symbol": "s16",
+                                "type": "t3"
+                              },
+                              {
+                                "kind": "KindEqualsToken",
+                                "pos": 629,
+                                "end": 631,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 631,
+                                "end": 638,
+                                "symbol": "s21",
+                                "type": "t3",
+                                "text": "height"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              },
+              {
+                "kind": "KindMethodDeclaration",
+                "pos": 643,
+                "end": 704,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 643,
+                    "end": 651,
+                    "symbol": "s22",
+                    "type": "t18",
+                    "text": "area"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 654,
+                    "end": 661,
+                    "type": "t3"
+                  },
+                  {
+                    "kind": "KindBlock",
+                    "pos": 661,
+                    "end": 704,
+                    "children": [
+                      {
+                        "kind": "KindReturnStatement",
+                        "pos": 663,
+                        "end": 700,
+                        "children": [
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 674,
+                            "end": 699,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 674,
+                                "end": 685,
+                                "children": [
+                                  {
+                                    "kind": "KindThisKeyword",
+                                    "pos": 674,
+                                    "end": 679,
+                                    "symbol": "s14",
+                                    "type": "t17"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 680,
+                                    "end": 685,
+                                    "symbol": "s15",
+                                    "type": "t3",
+                                    "text": "width"
+                                  }
+                                ],
+                                "symbol": "s15",
+                                "type": "t3"
+                              },
+                              {
+                                "kind": "KindAsteriskToken",
+                                "pos": 685,
+                                "end": 687,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 687,
+                                "end": 699,
+                                "children": [
+                                  {
+                                    "kind": "KindThisKeyword",
+                                    "pos": 687,
+                                    "end": 692,
+                                    "symbol": "s14",
+                                    "type": "t17"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 693,
+                                    "end": 699,
+                                    "symbol": "s16",
+                                    "type": "t3",
+                                    "text": "height"
+                                  }
+                                ],
+                                "symbol": "s16",
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t18"
+              }
+            ],
+            "type": "t12"
+          },
+          {
+            "kind": "KindClassDeclaration",
+            "pos": 706,
+            "end": 814,
+            "children": [
+              {
+                "kind": "KindAbstractKeyword",
+                "pos": 706,
+                "end": 716,
+                "type": "t1"
+              },
+              {
+                "kind": "KindIdentifier",
+                "pos": 722,
+                "end": 728,
+                "symbol": "s23",
+                "type": "t19",
+                "text": "Shape"
+              },
+              {
+                "kind": "KindMethodDeclaration",
+                "pos": 730,
+                "end": 760,
+                "children": [
+                  {
+                    "kind": "KindAbstractKeyword",
+                    "pos": 730,
+                    "end": 741,
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 741,
+                    "end": 749,
+                    "symbol": "s24",
+                    "type": "t21",
+                    "text": "getArea"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 752,
+                    "end": 759,
+                    "type": "t3"
+                  }
+                ],
+                "type": "t21"
+              },
+              {
+                "kind": "KindMethodDeclaration",
+                "pos": 760,
+                "end": 812,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 760,
+                    "end": 774,
+                    "symbol": "s25",
+                    "type": "t22",
+                    "text": "describe"
+                  },
+                  {
+                    "kind": "KindStringKeyword",
+                    "pos": 777,
+                    "end": 784,
+                    "type": "t6"
+                  },
+                  {
+                    "kind": "KindBlock",
+                    "pos": 784,
+                    "end": 812,
+                    "children": [
+                      {
+                        "kind": "KindReturnStatement",
+                        "pos": 786,
+                        "end": 808,
+                        "children": [
+                          {
+                            "kind": "KindStringLiteral",
+                            "pos": 797,
+                            "end": 807,
+                            "type": "t23",
+                            "text": "A shape"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t22"
+              }
+            ],
+            "type": "t19"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 814,
+            "end": 842,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 814,
+                "end": 841,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 821,
+                    "end": 841,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 821,
+                        "end": 823,
+                        "symbol": "s26",
+                        "type": "t8",
+                        "text": "p"
+                      },
+                      {
+                        "kind": "KindNewExpression",
+                        "pos": 825,
+                        "end": 841,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 829,
+                            "end": 835,
+                            "symbol": "s8",
+                            "type": "t9",
+                            "text": "Point"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 836,
+                            "end": 837,
+                            "type": "t24"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 838,
+                            "end": 840,
+                            "type": "t25"
+                          }
+                        ],
+                        "type": "t8"
+                      }
+                    ],
+                    "type": "t8"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 842,
+            "end": 881,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 842,
+                "end": 880,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 848,
+                    "end": 880,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 848,
+                        "end": 850,
+                        "symbol": "s27",
+                        "type": "t12",
+                        "text": "r"
+                      },
+                      {
+                        "kind": "KindNewExpression",
+                        "pos": 852,
+                        "end": 880,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 856,
+                            "end": 866,
+                            "symbol": "s14",
+                            "type": "t13",
+                            "text": "Rectangle"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 867,
+                            "end": 868,
+                            "type": "t26"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 869,
+                            "end": 871,
+                            "type": "t26"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 872,
+                            "end": 875,
+                            "type": "t27"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 876,
+                            "end": 879,
+                            "type": "t28"
+                          }
+                        ],
+                        "type": "t12"
+                      }
+                    ],
+                    "type": "t12"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindEndOfFile",
+            "pos": 881,
+            "end": 882,
+            "type": "t1"
+          }
+        ],
+        "type": "t1"
+      }
+    }
+  ],
+  "types": [
+    {
+      "id": "t1",
+      "kind": "any",
+      "flags": 1
+    },
+    {
+      "id": "t2",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "IPoint"
+    },
+    {
+      "id": "t3",
+      "kind": "number",
+      "flags": 64
+    },
+    {
+      "id": "t4",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "distance"
+    },
+    {
+      "id": "t5",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "IShape"
+    },
+    {
+      "id": "t6",
+      "kind": "string",
+      "flags": 32
+    },
+    {
+      "id": "t7",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "area"
+    },
+    {
+      "id": "t8",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Point"
+    },
+    {
+      "id": "t9",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Point"
+    },
+    {
+      "id": "t10",
+      "kind": "typeParameter",
+      "flags": 524288,
+      "name": "Point"
+    },
+    {
+      "id": "t11",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "distance"
+    },
+    {
+      "id": "t12",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Rectangle"
+    },
+    {
+      "id": "t13",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Rectangle"
+    },
+    {
+      "id": "t14",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Point"
+    },
+    {
+      "id": "t15",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "Rectangle"
+    },
+    {
+      "id": "t16",
+      "kind": "void",
+      "flags": 16
+    },
+    {
+      "id": "t17",
+      "kind": "typeParameter",
+      "flags": 524288,
+      "name": "Rectangle"
+    },
+    {
+      "id": "t18",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "area"
+    },
+    {
+      "id": "t19",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Shape"
+    },
+    {
+      "id": "t20",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Shape"
+    },
+    {
+      "id": "t21",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "getArea"
+    },
+    {
+      "id": "t22",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "describe"
+    },
+    {
+      "id": "t23",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "A shape"
+    },
+    {
+      "id": "t24",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "1"
+    },
+    {
+      "id": "t25",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "2"
+    },
+    {
+      "id": "t26",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "0"
+    },
+    {
+      "id": "t27",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "10"
+    },
+    {
+      "id": "t28",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "20"
+    }
+  ],
+  "symbols": [
+    {
+      "id": "s1",
+      "name": "IPoint",
+      "flags": 64,
+      "kind": "interface",
+      "type": "t1"
+    },
+    {
+      "id": "s2",
+      "name": "x",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s3",
+      "name": "y",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s4",
+      "name": "distance",
+      "flags": 8192,
+      "kind": "method",
+      "type": "t4"
+    },
+    {
+      "id": "s5",
+      "name": "IShape",
+      "flags": 64,
+      "kind": "interface",
+      "type": "t1"
+    },
+    {
+      "id": "s6",
+      "name": "name",
+      "flags": 4,
+      "kind": "property",
+      "type": "t6"
+    },
+    {
+      "id": "s7",
+      "name": "area",
+      "flags": 8192,
+      "kind": "method",
+      "type": "t7"
+    },
+    {
+      "id": "s8",
+      "name": "Point",
+      "flags": 32,
+      "kind": "class",
+      "type": "t9"
+    },
+    {
+      "id": "s9",
+      "name": "x",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s10",
+      "name": "y",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s11",
+      "name": "x",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s12",
+      "name": "y",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s13",
+      "name": "distance",
+      "flags": 8192,
+      "kind": "method",
+      "type": "t11"
+    },
+    {
+      "id": "s14",
+      "name": "Rectangle",
+      "flags": 32,
+      "kind": "class",
+      "type": "t13"
+    },
+    {
+      "id": "s15",
+      "name": "width",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s16",
+      "name": "height",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s17",
+      "name": "name",
+      "flags": 4,
+      "kind": "property",
+      "type": "t6"
+    },
+    {
+      "id": "s18",
+      "name": "x",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s19",
+      "name": "y",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s20",
+      "name": "width",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s21",
+      "name": "height",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s22",
+      "name": "area",
+      "flags": 8192,
+      "kind": "method",
+      "type": "t18"
+    },
+    {
+      "id": "s23",
+      "name": "Shape",
+      "flags": 32,
+      "kind": "class",
+      "type": "t20"
+    },
+    {
+      "id": "s24",
+      "name": "getArea",
+      "flags": 8192,
+      "kind": "method",
+      "type": "t21"
+    },
+    {
+      "id": "s25",
+      "name": "describe",
+      "flags": 8192,
+      "kind": "method",
+      "type": "t22"
+    },
+    {
+      "id": "s26",
+      "name": "p",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t8"
+    },
+    {
+      "id": "s27",
+      "name": "r",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t12"
+    }
+  ],
+  "globals": null,
+  "functions": null,
+  "classes": [
+    {
+      "name": "Point",
+      "symbol": "s8",
+      "implements": [
+        "s1"
+      ],
+      "properties": [
+        {
+          "name": "x",
+          "symbol": "s9",
+          "type": "t3",
+          "visibility": "public"
+        },
+        {
+          "name": "y",
+          "symbol": "s10",
+          "type": "t3",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "name": "distance",
+          "symbol": "s13",
+          "returnType": "t3",
+          "body": {
+            "statements": [
+              {
+                "kind": "KindReturnStatement",
+                "return": {
+                  "value": {
+                    "kind": "KindCallExpression",
+                    "type": "t1",
+                    "callee": {
+                      "kind": "KindPropertyAccessExpression",
+                      "type": "t1",
+                      "object": {
+                        "kind": "KindIdentifier",
+                        "text": "Math",
+                        "type": "t1"
+                      },
+                      "property": {
+                        "kind": "KindIdentifier",
+                        "text": "sqrt",
+                        "type": "t1"
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "kind": "KindBinaryExpression",
+                        "type": "t3",
+                        "operator": "KindPlusToken",
+                        "left": {
+                          "kind": "KindBinaryExpression",
+                          "type": "t3",
+                          "operator": "KindAsteriskToken",
+                          "left": {
+                            "kind": "KindPropertyAccessExpression",
+                            "type": "t3",
+                            "symbol": "s9",
+                            "object": {
+                              "kind": "KindThisKeyword",
+                              "type": "t10",
+                              "symbol": "s8"
+                            },
+                            "property": {
+                              "kind": "KindIdentifier",
+                              "text": "x",
+                              "type": "t3",
+                              "symbol": "s9"
+                            }
+                          },
+                          "right": {
+                            "kind": "KindPropertyAccessExpression",
+                            "type": "t3",
+                            "symbol": "s9",
+                            "object": {
+                              "kind": "KindThisKeyword",
+                              "type": "t10",
+                              "symbol": "s8"
+                            },
+                            "property": {
+                              "kind": "KindIdentifier",
+                              "text": "x",
+                              "type": "t3",
+                              "symbol": "s9"
+                            }
+                          }
+                        },
+                        "right": {
+                          "kind": "KindBinaryExpression",
+                          "type": "t3",
+                          "operator": "KindAsteriskToken",
+                          "left": {
+                            "kind": "KindPropertyAccessExpression",
+                            "type": "t3",
+                            "symbol": "s10",
+                            "object": {
+                              "kind": "KindThisKeyword",
+                              "type": "t10",
+                              "symbol": "s8"
+                            },
+                            "property": {
+                              "kind": "KindIdentifier",
+                              "text": "y",
+                              "type": "t3",
+                              "symbol": "s10"
+                            }
+                          },
+                          "right": {
+                            "kind": "KindPropertyAccessExpression",
+                            "type": "t3",
+                            "symbol": "s10",
+                            "object": {
+                              "kind": "KindThisKeyword",
+                              "type": "t10",
+                              "symbol": "s8"
+                            },
+                            "property": {
+                              "kind": "KindIdentifier",
+                              "text": "y",
+                              "type": "t3",
+                              "symbol": "s10"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rectangle",
+      "symbol": "s14",
+      "baseClass": "s8",
+      "implements": [
+        "s5"
+      ],
+      "properties": [
+        {
+          "name": "width",
+          "symbol": "s15",
+          "type": "t3",
+          "visibility": "private"
+        },
+        {
+          "name": "height",
+          "symbol": "s16",
+          "type": "t3",
+          "visibility": "protected"
+        },
+        {
+          "name": "name",
+          "symbol": "s17",
+          "type": "t6",
+          "isReadonly": true,
+          "init": {
+            "kind": "KindStringLiteral",
+            "text": "Rectangle",
+            "type": "t15",
+            "value": "Rectangle"
+          }
+        }
+      ],
+      "methods": [
+        {
+          "name": "area",
+          "symbol": "s22",
+          "returnType": "t3",
+          "body": {
+            "statements": [
+              {
+                "kind": "KindReturnStatement",
+                "return": {
+                  "value": {
+                    "kind": "KindBinaryExpression",
+                    "type": "t3",
+                    "operator": "KindAsteriskToken",
+                    "left": {
+                      "kind": "KindPropertyAccessExpression",
+                      "type": "t3",
+                      "symbol": "s15",
+                      "object": {
+                        "kind": "KindThisKeyword",
+                        "type": "t17",
+                        "symbol": "s14"
+                      },
+                      "property": {
+                        "kind": "KindIdentifier",
+                        "text": "width",
+                        "type": "t3",
+                        "symbol": "s15"
+                      }
+                    },
+                    "right": {
+                      "kind": "KindPropertyAccessExpression",
+                      "type": "t3",
+                      "symbol": "s16",
+                      "object": {
+                        "kind": "KindThisKeyword",
+                        "type": "t17",
+                        "symbol": "s14"
+                      },
+                      "property": {
+                        "kind": "KindIdentifier",
+                        "text": "height",
+                        "type": "t3",
+                        "symbol": "s16"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shape",
+      "symbol": "s23",
+      "methods": [
+        {
+          "name": "getArea",
+          "symbol": "s24",
+          "returnType": "t3",
+          "isAbstract": true
+        },
+        {
+          "name": "describe",
+          "symbol": "s25",
+          "returnType": "t6",
+          "body": {
+            "statements": [
+              {
+                "kind": "KindReturnStatement",
+                "return": {
+                  "value": {
+                    "kind": "KindStringLiteral",
+                    "text": "A shape",
+                    "type": "t23",
+                    "value": "A shape"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "IPoint",
+      "symbol": "s1",
+      "properties": [
+        {
+          "name": "x",
+          "symbol": "s2",
+          "type": "t3"
+        },
+        {
+          "name": "y",
+          "symbol": "s3",
+          "type": "t3"
+        }
+      ],
+      "methods": [
+        {
+          "name": "distance",
+          "symbol": "s4",
+          "returnType": "t3"
+        }
+      ]
+    },
+    {
+      "name": "IShape",
+      "symbol": "s5",
+      "properties": [
+        {
+          "name": "name",
+          "symbol": "s6",
+          "type": "t6"
+        }
+      ],
+      "methods": [
+        {
+          "name": "area",
+          "symbol": "s7",
+          "returnType": "t3"
+        }
+      ]
+    }
+  ]
+}

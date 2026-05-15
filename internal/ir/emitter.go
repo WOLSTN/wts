@@ -19,6 +19,10 @@ type Program struct {
 	Symbols   []*Symbol   `json:"symbols"`
 	Globals   []*Global   `json:"globals"`
 	Functions []*Function `json:"functions"`
+	Classes   []*Class    `json:"classes"`
+	Interfaces []*Interface `json:"interfaces"`
+	Imports   []*Import   `json:"imports,omitempty"`
+	Exports   []*Export   `json:"exports,omitempty"`
 }
 
 type File struct {
@@ -93,6 +97,83 @@ type Function struct {
 	Parameters []Param `json:"parameters"`
 	ReturnType string  `json:"returnType"`
 	Body       *Block  `json:"body,omitempty"`
+}
+
+type Class struct {
+	Name          string        `json:"name"`
+	Symbol        string        `json:"symbol"`
+	TypeParams    []string      `json:"typeParams,omitempty"`
+	BaseClass     string        `json:"baseClass,omitempty"`
+	Implements    []string      `json:"implements,omitempty"`
+	Constructor   *ClassMethod  `json:"constructor,omitempty"`
+	Properties    []*ClassProperty `json:"properties,omitempty"`
+	Methods       []*ClassMethod `json:"methods,omitempty"`
+	IsAbstract    bool          `json:"isAbstract,omitempty"`
+}
+
+type ClassProperty struct {
+	Name       string `json:"name"`
+	Symbol     string `json:"symbol"`
+	Type       string `json:"type"`
+	Visibility string `json:"visibility,omitempty"`
+	IsStatic   bool   `json:"isStatic,omitempty"`
+	IsReadonly bool   `json:"isReadonly,omitempty"`
+	IsOptional bool   `json:"isOptional,omitempty"`
+	Init       *Expression `json:"init,omitempty"`
+}
+
+type ClassMethod struct {
+	Name       string  `json:"name"`
+	Symbol     string  `json:"symbol"`
+	Parameters []Param `json:"parameters,omitempty"`
+	ReturnType string  `json:"returnType,omitempty"`
+	Visibility string  `json:"visibility,omitempty"`
+	IsStatic   bool    `json:"isStatic,omitempty"`
+	IsAbstract bool    `json:"isAbstract,omitempty"`
+	Body       *Block  `json:"body,omitempty"`
+}
+
+type Interface struct {
+	Name        string        `json:"name"`
+	Symbol      string        `json:"symbol"`
+	TypeParams  []string      `json:"typeParams,omitempty"`
+	Extends     []string      `json:"extends,omitempty"`
+	Properties  []*Property   `json:"properties,omitempty"`
+	Methods     []*InterfaceMethod `json:"methods,omitempty"`
+	CallSignatures []*TypeSignature `json:"callSignatures,omitempty"`
+}
+
+type InterfaceMethod struct {
+	Name       string `json:"name"`
+	Symbol     string `json:"symbol"`
+	Parameters []Param `json:"parameters,omitempty"`
+	ReturnType string  `json:"returnType,omitempty"`
+}
+
+type Import struct {
+	Kind         string        `json:"kind"`
+	ModulePath   string        `json:"modulePath"`
+	IsTypeOnly   bool          `json:"isTypeOnly,omitempty"`
+	IsDefault    bool          `json:"isDefault,omitempty"`
+	Namespace    string        `json:"namespace,omitempty"`
+	Specifiers   []*ImportSpec `json:"specifiers,omitempty"`
+}
+
+type ImportSpec struct {
+	Name      string `json:"name"`
+	Property  string `json:"property,omitempty"`
+	Symbol    string `json:"symbol,omitempty"`
+	IsType    bool   `json:"isType,omitempty"`
+}
+
+type Export struct {
+	Kind       string      `json:"kind"`
+	Name       string      `json:"name,omitempty"`
+	Symbol     string      `json:"symbol,omitempty"`
+	IsTypeOnly bool        `json:"isTypeOnly,omitempty"`
+	IsDefault  bool        `json:"isDefault,omitempty"`
+	ModulePath string      `json:"modulePath,omitempty"`
+	Declaration *Declaration `json:"declaration,omitempty"`
 }
 
 type Param struct {
@@ -204,6 +285,10 @@ func (e *Emitter) Emit() (*Program, error) {
 			return nil, err
 		}
 		e.collectFunctions(sourceFile)
+		e.collectClasses(sourceFile)
+		e.collectInterfaces(sourceFile)
+		e.collectImports(sourceFile)
+		e.collectExports(sourceFile)
 	}
 
 	e.emitGlobalSymbols()
@@ -233,7 +318,17 @@ func (e *Emitter) emitNode(node *ast.Node) *Node {
 		End:  node.End(),
 	}
 
-	if e.checker != nil {
+	skipTypeCheck := node.Kind == ast.KindImportDeclaration ||
+		node.Kind == ast.KindImportClause ||
+		node.Kind == ast.KindImportSpecifier ||
+		node.Kind == ast.KindImportEqualsDeclaration ||
+		node.Kind == ast.KindExportDeclaration ||
+		node.Kind == ast.KindExportAssignment ||
+		node.Kind == ast.KindExportSpecifier ||
+		node.Kind == ast.KindNamespaceImport ||
+		node.Kind == ast.KindNamedImports
+
+	if e.checker != nil && !skipTypeCheck {
 		if sym := e.checker.GetSymbolAtLocation(node); sym != nil {
 			irNode.Symbol = e.getOrCreateSymbolId(sym)
 		}
@@ -766,10 +861,21 @@ func (e *Emitter) emitExpression(node *ast.Node) *Expression {
 			if name != nil {
 				propInit.Name = name.Text()
 			}
-			if init := prop.Initializer(); init != nil {
-				propInit.Value = e.emitExpression(init)
-			} else if prop.Kind == ast.KindPropertyAssignment && name != nil {
-				propInit.Value = e.emitExpression(name)
+			switch prop.Kind {
+			case ast.KindPropertyAssignment:
+				pa := prop.AsPropertyAssignment()
+				if pa.Initializer != nil {
+					propInit.Value = e.emitExpression(pa.Initializer)
+				} else if name != nil {
+					propInit.Value = e.emitExpression(name)
+				}
+			case ast.KindShorthandPropertyAssignment:
+				spa := prop.AsShorthandPropertyAssignment()
+				if spa.ObjectAssignmentInitializer != nil {
+					propInit.Value = e.emitExpression(spa.ObjectAssignmentInitializer)
+				} else if name != nil {
+					propInit.Value = e.emitExpression(name)
+				}
 			}
 			expr.Properties = append(expr.Properties, propInit)
 		}
@@ -860,4 +966,608 @@ func (e *Emitter) emitForStatement(node *ast.Node) *ForStmt {
 	}
 
 	return forStmt
+}
+
+func (e *Emitter) collectClasses(file *ast.SourceFile) {
+	file.AsNode().ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindClassDeclaration || child.Kind == ast.KindClassExpression {
+			e.emitClass(child)
+		}
+		return false
+	})
+}
+
+func (e *Emitter) emitClass(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return
+	}
+
+	irClass := &Class{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if typeParams := node.TypeParameters(); len(typeParams) > 0 {
+		for _, tp := range typeParams {
+			tpSym := e.checker.GetSymbolAtLocation(tp.Name())
+			if tpSym != nil {
+				irClass.TypeParams = append(irClass.TypeParams, e.getOrCreateSymbolId(tpSym))
+			}
+		}
+	}
+
+	classDecl := node.AsClassDeclaration()
+	if classDecl == nil {
+		classExpr := node.AsClassExpression()
+		if classExpr == nil {
+			return
+		}
+		e.processClassMembers(node, irClass)
+	} else {
+		e.processClassMembers(node, irClass)
+	}
+
+	if heritage := ast.GetHeritageClause(node, ast.KindExtendsKeyword); heritage != nil {
+		if types := heritage.AsHeritageClause().Types.Nodes; len(types) > 0 {
+			for _, t := range types {
+				if expr := t.Expression(); expr != nil {
+					typeSym := e.checker.GetSymbolAtLocation(expr)
+					if typeSym != nil {
+						irClass.BaseClass = e.getOrCreateSymbolId(typeSym)
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if impls := ast.GetImplementsHeritageClauseElements(node); len(impls) > 0 {
+		for _, impl := range impls {
+			if expr := impl.Expression(); expr != nil {
+				typeSym := e.checker.GetSymbolAtLocation(expr)
+				if typeSym != nil {
+					irClass.Implements = append(irClass.Implements, e.getOrCreateSymbolId(typeSym))
+				}
+			}
+		}
+	}
+
+	e.irProgram.Classes = append(e.irProgram.Classes, irClass)
+}
+
+func (e *Emitter) processClassMembers(node *ast.Node, irClass *Class) {
+	for _, member := range node.Members() {
+		switch member.Kind {
+		case ast.KindConstructor:
+			irClass.Constructor = e.emitClassMethod(member)
+		case ast.KindPropertyDeclaration:
+			prop := e.emitClassProperty(member)
+			if prop != nil {
+				irClass.Properties = append(irClass.Properties, prop)
+			}
+		case ast.KindMethodDeclaration:
+			method := e.emitClassMethod(member)
+			if method != nil {
+				irClass.Methods = append(irClass.Methods, method)
+			}
+		case ast.KindGetAccessor, ast.KindSetAccessor:
+			method := e.emitClassMethod(member)
+			if method != nil {
+				irClass.Methods = append(irClass.Methods, method)
+			}
+		}
+	}
+}
+
+func (e *Emitter) emitClassProperty(node *ast.Node) *ClassProperty {
+	if node == nil {
+		return nil
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return nil
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return nil
+	}
+
+	prop := &ClassProperty{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if t := e.checker.GetTypeOfSymbol(sym); t != nil {
+		prop.Type = e.getOrCreateTypeId(t)
+	}
+
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, mod := range modifiers.Nodes {
+			switch mod.Kind {
+			case ast.KindPublicKeyword:
+				prop.Visibility = "public"
+			case ast.KindPrivateKeyword:
+				prop.Visibility = "private"
+			case ast.KindProtectedKeyword:
+				prop.Visibility = "protected"
+			case ast.KindStaticKeyword:
+				prop.IsStatic = true
+			case ast.KindReadonlyKeyword:
+				prop.IsReadonly = true
+			}
+		}
+	}
+
+	if init := node.Initializer(); init != nil {
+		prop.Init = e.emitExpression(init)
+	}
+
+	return prop
+}
+
+func (e *Emitter) emitClassMethod(node *ast.Node) *ClassMethod {
+	if node == nil {
+		return nil
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return nil
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return nil
+	}
+
+	method := &ClassMethod{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	sig := e.checker.GetSignatureFromDeclaration(node)
+	if sig != nil {
+		for _, param := range sig.Parameters() {
+			irParam := Param{Name: param.Name}
+			if paramType := e.checker.GetTypeOfSymbol(param); paramType != nil {
+				irParam.Type = e.getOrCreateTypeId(paramType)
+			}
+			method.Parameters = append(method.Parameters, irParam)
+		}
+
+		if returnType := e.checker.GetReturnTypeOfSignature(sig); returnType != nil {
+			method.ReturnType = e.getOrCreateTypeId(returnType)
+		}
+	}
+
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, mod := range modifiers.Nodes {
+			switch mod.Kind {
+			case ast.KindPublicKeyword:
+				method.Visibility = "public"
+			case ast.KindPrivateKeyword:
+				method.Visibility = "private"
+			case ast.KindProtectedKeyword:
+				method.Visibility = "protected"
+			case ast.KindStaticKeyword:
+				method.IsStatic = true
+			case ast.KindAbstractKeyword:
+				method.IsAbstract = true
+			}
+		}
+	}
+
+	if body := node.Body(); body != nil {
+		method.Body = e.emitBlock(body)
+	}
+
+	return method
+}
+
+func (e *Emitter) collectInterfaces(file *ast.SourceFile) {
+	file.AsNode().ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindInterfaceDeclaration {
+			e.emitInterface(child)
+		}
+		return false
+	})
+}
+
+func (e *Emitter) emitInterface(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return
+	}
+
+	irInterface := &Interface{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if typeParams := node.TypeParameters(); len(typeParams) > 0 {
+		for _, tp := range typeParams {
+			tpSym := e.checker.GetSymbolAtLocation(tp.Name())
+			if tpSym != nil {
+				irInterface.TypeParams = append(irInterface.TypeParams, e.getOrCreateSymbolId(tpSym))
+			}
+		}
+	}
+
+	if heritage := ast.GetHeritageClause(node, ast.KindExtendsKeyword); heritage != nil {
+		if types := heritage.AsHeritageClause().Types.Nodes; len(types) > 0 {
+			for _, t := range types {
+				if expr := t.Expression(); expr != nil {
+					typeSym := e.checker.GetSymbolAtLocation(expr)
+					if typeSym != nil {
+						irInterface.Extends = append(irInterface.Extends, e.getOrCreateSymbolId(typeSym))
+					}
+				}
+			}
+		}
+	}
+
+	for _, member := range node.Members() {
+		switch member.Kind {
+		case ast.KindPropertySignature:
+			prop := e.emitInterfaceProperty(member)
+			if prop != nil {
+				irInterface.Properties = append(irInterface.Properties, prop)
+			}
+		case ast.KindMethodSignature:
+			method := e.emitInterfaceMethod(member)
+			if method != nil {
+				irInterface.Methods = append(irInterface.Methods, method)
+			}
+		case ast.KindCallSignature:
+			sig := e.emitTypeSignature(member)
+			if sig != nil {
+				irInterface.CallSignatures = append(irInterface.CallSignatures, sig)
+			}
+		}
+	}
+
+	e.irProgram.Interfaces = append(e.irProgram.Interfaces, irInterface)
+}
+
+func (e *Emitter) emitInterfaceProperty(node *ast.Node) *Property {
+	if node == nil {
+		return nil
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return nil
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return nil
+	}
+
+	prop := &Property{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if t := e.checker.GetTypeOfSymbol(sym); t != nil {
+		prop.Type = e.getOrCreateTypeId(t)
+	}
+
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, mod := range modifiers.Nodes {
+			if mod.Kind == ast.KindReadonlyKeyword {
+				prop.IsReadonly = true
+			}
+		}
+	}
+
+	prop.IsOptional = node.QuestionToken() != nil
+
+	return prop
+}
+
+func (e *Emitter) emitInterfaceMethod(node *ast.Node) *InterfaceMethod {
+	if node == nil {
+		return nil
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return nil
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return nil
+	}
+
+	method := &InterfaceMethod{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	sig := e.checker.GetSignatureFromDeclaration(node)
+	if sig != nil {
+		for _, param := range sig.Parameters() {
+			irParam := Param{Name: param.Name}
+			if paramType := e.checker.GetTypeOfSymbol(param); paramType != nil {
+				irParam.Type = e.getOrCreateTypeId(paramType)
+			}
+			method.Parameters = append(method.Parameters, irParam)
+		}
+
+		if returnType := e.checker.GetReturnTypeOfSignature(sig); returnType != nil {
+			method.ReturnType = e.getOrCreateTypeId(returnType)
+		}
+	}
+
+	return method
+}
+
+func (e *Emitter) emitTypeSignature(node *ast.Node) *TypeSignature {
+	if node == nil {
+		return nil
+	}
+
+	sig := e.checker.GetSignatureFromDeclaration(node)
+	if sig == nil {
+		return nil
+	}
+
+	irSig := &TypeSignature{
+		Kind: node.Kind.String(),
+	}
+
+	for _, param := range sig.Parameters() {
+		irParam := Param{Name: param.Name}
+		if paramType := e.checker.GetTypeOfSymbol(param); paramType != nil {
+			irParam.Type = e.getOrCreateTypeId(paramType)
+		}
+		irSig.Parameters = append(irSig.Parameters, irParam)
+	}
+
+	if returnType := e.checker.GetReturnTypeOfSignature(sig); returnType != nil {
+		irSig.ReturnType = e.getOrCreateTypeId(returnType)
+	}
+
+	return irSig
+}
+
+func (e *Emitter) collectImports(file *ast.SourceFile) {
+file.AsNode().ForEachChild(func(child *ast.Node) bool {
+switch child.Kind {
+case ast.KindImportDeclaration:
+e.emitImportDeclaration(child)
+case ast.KindImportEqualsDeclaration:
+e.emitImportEqualsDeclaration(child)
+}
+return false
+})
+}
+
+func (e *Emitter) emitImportDeclaration(node *ast.Node) {
+if node == nil {
+return
+}
+
+irImport := &Import{
+Kind: node.Kind.String(),
+}
+
+if importClause := node.ImportClause(); importClause != nil {
+		ic := importClause.AsImportClause()
+		if ic.PhaseModifier == ast.KindTypeKeyword {
+			irImport.IsTypeOnly = true
+		}
+		if name := ic.Name(); name != nil {
+			irImport.IsDefault = true
+			if sym := e.checker.GetSymbolAtLocation(name); sym != nil {
+				irImport.Specifiers = append(irImport.Specifiers, &ImportSpec{
+					Name:   sym.Name,
+					Symbol: e.getOrCreateSymbolId(sym),
+				})
+			}
+		}
+		if ic.NamedBindings != nil {
+			if ic.NamedBindings.Kind == ast.KindNamespaceImport {
+				nsImport := ic.NamedBindings.AsNamespaceImport()
+				if name := nsImport.Name(); name != nil {
+					if sym := e.checker.GetSymbolAtLocation(name); sym != nil {
+						irImport.Namespace = sym.Name
+					}
+				}
+			} else if ic.NamedBindings.Kind == ast.KindNamedImports {
+				for _, spec := range ic.NamedBindings.Elements() {
+					if spec.Kind == ast.KindImportSpecifier {
+						impSpec := &ImportSpec{}
+						if name := spec.Name(); name != nil {
+							impSpec.Name = name.Text()
+							if sym := e.checker.GetSymbolAtLocation(name); sym != nil {
+								impSpec.Symbol = e.getOrCreateSymbolId(sym)
+							}
+						}
+						if propName := spec.PropertyName(); propName != nil {
+							impSpec.Property = propName.Text()
+						}
+						impSpec.IsType = spec.IsTypeOnly()
+						irImport.Specifiers = append(irImport.Specifiers, impSpec)
+					}
+				}
+			}
+		}
+	}
+
+if modulePath := node.ModuleSpecifier(); modulePath != nil {
+irImport.ModulePath = modulePath.Text()
+}
+
+e.irProgram.Imports = append(e.irProgram.Imports, irImport)
+}
+
+func (e *Emitter) emitImportEqualsDeclaration(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	irImport := &Import{
+		Kind: node.Kind.String(),
+	}
+
+	ied := node.AsImportEqualsDeclaration()
+	if ied.Name() != nil {
+		if sym := e.checker.GetSymbolAtLocation(ied.Name()); sym != nil {
+			irImport.Namespace = sym.Name
+		}
+	}
+
+	if ied.ModuleReference != nil {
+		if ied.ModuleReference.Kind == ast.KindExternalModuleReference {
+			emr := ied.ModuleReference.AsExternalModuleReference()
+			if emr.Expression != nil {
+				irImport.ModulePath = emr.Expression.Text()
+			}
+		}
+	}
+
+	e.irProgram.Imports = append(e.irProgram.Imports, irImport)
+}
+
+func (e *Emitter) collectExports(file *ast.SourceFile) {
+file.AsNode().ForEachChild(func(child *ast.Node) bool {
+switch child.Kind {
+case ast.KindExportAssignment:
+e.emitExportAssignment(child)
+case ast.KindExportDeclaration:
+e.emitExportDeclaration(child)
+case ast.KindFunctionDeclaration, ast.KindClassDeclaration, ast.KindInterfaceDeclaration,
+ast.KindTypeAliasDeclaration, ast.KindEnumDeclaration, ast.KindVariableStatement:
+if modifiers := child.Modifiers(); modifiers != nil {
+for _, mod := range modifiers.Nodes {
+if mod.Kind == ast.KindExportKeyword {
+e.emitExportFromDeclaration(child)
+break
+}
+}
+}
+}
+return false
+})
+}
+
+func (e *Emitter) emitExportAssignment(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	irExport := &Export{
+		Kind: node.Kind.String(),
+	}
+
+	ea := node.AsExportAssignment()
+	if ea.Expression != nil {
+		if sym := e.checker.GetSymbolAtLocation(ea.Expression); sym != nil {
+			irExport.Name = sym.Name
+			irExport.Symbol = e.getOrCreateSymbolId(sym)
+		}
+	}
+
+	irExport.IsDefault = !ea.IsExportEquals
+
+	e.irProgram.Exports = append(e.irProgram.Exports, irExport)
+}
+
+func (e *Emitter) emitExportDeclaration(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	irExport := &Export{
+		Kind: node.Kind.String(),
+	}
+
+	ed := node.AsExportDeclaration()
+	if ed.IsTypeOnly {
+		irExport.IsTypeOnly = true
+	}
+
+	if ed.ExportClause != nil {
+		if ed.ExportClause.Kind == ast.KindNamedExports {
+			for _, spec := range ed.ExportClause.Elements() {
+				if spec.Kind == ast.KindExportSpecifier {
+					name := spec.Name()
+					if name != nil {
+						exportName := name.Text()
+						if sym := e.checker.GetSymbolAtLocation(name); sym != nil {
+							e.irProgram.Exports = append(e.irProgram.Exports, &Export{
+								Kind:   "export_specifier",
+								Name:   exportName,
+								Symbol: e.getOrCreateSymbolId(sym),
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ed.ModuleSpecifier != nil {
+		irExport.ModulePath = ed.ModuleSpecifier.Text()
+	}
+
+	if irExport.Name != "" || irExport.ModulePath != "" {
+		e.irProgram.Exports = append(e.irProgram.Exports, irExport)
+	}
+}
+
+func (e *Emitter) emitExportFromDeclaration(node *ast.Node) {
+if node == nil {
+return
+}
+
+nameNode := node.Name()
+if nameNode == nil {
+return
+}
+
+sym := e.checker.GetSymbolAtLocation(nameNode)
+if sym == nil {
+return
+}
+
+irExport := &Export{
+Kind:   node.Kind.String(),
+Name:   sym.Name,
+Symbol: e.getOrCreateSymbolId(sym),
+}
+
+if modifiers := node.Modifiers(); modifiers != nil {
+for _, mod := range modifiers.Nodes {
+if mod.Kind == ast.KindDefaultKeyword {
+irExport.IsDefault = true
+}
+}
+}
+
+e.irProgram.Exports = append(e.irProgram.Exports, irExport)
 }
