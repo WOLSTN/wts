@@ -1,17 +1,20 @@
 # WTS - TypeScript Frontend for Wolstn
 
-**WTS** (Wolstn TypeScript) is a TypeScript frontend for the [Wolstn](https://github.com/WOLSTN/wolstn) native compiler. It parses TypeScript code, performs full type checking, and emits a comprehensive typed IR (Intermediate Representation) that preserves all type information for native code generation.
+**WTS** (Wolstn TypeScript) is a TypeScript frontend for the [Wolstn](https://github.com/WOLSTN) native compiler. It parses TypeScript code, performs full type checking, and emits a comprehensive typed IR (Intermediate Representation) that preserves all type information for native code generation.
 
 ## Overview
 
 WTS is forked from [Microsoft's TypeScript-go](https://github.com/microsoft/TypeScript-go) (tsgo), but adapted to serve as a frontend for native compilation rather than JavaScript emission.
+
+> **WTS is not Wolstn itself. WTS only produces `.wir` IR files — it does not compile to native executables.**
+> To compile TypeScript to a native binary, feed the `.wir` output to **[WolstnC](https://github.com/WOLSTN/WolstnC)** (the Wolstn compiler backend).
 
 | | tsgo | WTS |
 |---|---|---|
 | **Purpose** | TypeScript → JavaScript | TypeScript → Wolstn IR |
 | **Output** | JavaScript code | Typed IR (JSON) |
 | **Type info** | Used for checking only | **Preserved for codegen** |
-| **Runtime** | V8, Node.js, browsers | Native (ELF/EXE) via Wolstn |
+| **Runtime** | V8, Node.js, browsers | Native via WolstnC |
 
 ## Why WTS?
 
