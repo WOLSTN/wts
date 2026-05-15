@@ -1,7 +1,7 @@
 {
     "private": true,
-    "name": "typescript-go",
-    "version": "0.0.0",
+    "name": "wts",
+    "version": "0.1.0",
     "license": "Apache-2.0",
     "engines": {
         "node": ">=20.19"
