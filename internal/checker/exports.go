@@ -57,3 +57,7 @@ func (c *Checker) GetSignaturesOfType(t *Type, kind SignatureKind) []*Signature 
 func (c *Checker) GetMergedSymbol(symbol *ast.Symbol) *ast.Symbol {
 	return c.getMergedSymbol(symbol)
 }
+
+func (c *Checker) GetEnumMemberValue(node *ast.Node) any {
+	return c.getEnumMemberValue(node).Value
+}

@@ -362,69 +362,19 @@ func (e *Emitter) emitSourceFiles() {
 
 		switch {
 		case flags&ast.SymbolFlagsClass != 0:
-			e.irProgram.Classes = append(e.irProgram.Classes, &Class{
-				Name:   sym.Name,
-				Symbol: e.getOrCreateSymbolId(sym),
-			})
+			e.emitClassFromSymbol(sym)
 		case flags&ast.SymbolFlagsInterface != 0:
-			e.irProgram.Interfaces = append(e.irProgram.Interfaces, &Interface{
-				Name:   sym.Name,
-				Symbol: e.getOrCreateSymbolId(sym),
-			})
+			e.emitInterfaceFromSymbol(sym)
 		case flags&ast.SymbolFlagsEnum != 0:
-			e.irProgram.Enums = append(e.irProgram.Enums, &Enum{
-				Name:   sym.Name,
-				Symbol: e.getOrCreateSymbolId(sym),
-			})
+			e.emitEnumFromSymbol(sym)
 		case flags&ast.SymbolFlagsTypeAlias != 0:
-			e.irProgram.TypeAliases = append(e.irProgram.TypeAliases, &TypeAlias{
-				Name:   sym.Name,
-				Symbol: e.getOrCreateSymbolId(sym),
-			})
+			e.emitTypeAliasFromSymbol(sym, sym.Name)
 		case flags&ast.SymbolFlagsModule != 0:
 			if sym.Name != "globalThis" {
-				members := e.collectNamespaceMembers(sym)
-				e.irProgram.Namespaces = append(e.irProgram.Namespaces, &Namespace{
-					Name:    sym.Name,
-					Symbol:  e.getOrCreateSymbolId(sym),
-					Members: members,
-				})
+				e.emitNamespaceFromSymbol(sym)
 			}
 		}
 	}
-}
-
-func (e *Emitter) collectNamespaceMembers(sym *ast.Symbol) []*NamespaceMember {
-	if sym.Exports == nil {
-		return nil
-	}
-	var members []*NamespaceMember
-	for name, exported := range sym.Exports {
-		member := &NamespaceMember{
-			Name:   name,
-			Symbol: e.getOrCreateSymbolId(exported),
-		}
-		switch {
-		case exported.Flags&ast.SymbolFlagsFunction != 0:
-			member.Kind = "function"
-		case exported.Flags&ast.SymbolFlagsClass != 0:
-			member.Kind = "class"
-		case exported.Flags&ast.SymbolFlagsInterface != 0:
-			member.Kind = "interface"
-		case exported.Flags&ast.SymbolFlagsEnum != 0:
-			member.Kind = "enum"
-		case exported.Flags&ast.SymbolFlagsModule != 0:
-			member.Kind = "namespace"
-		case exported.Flags&ast.SymbolFlagsTypeAlias != 0:
-			member.Kind = "typeAlias"
-		case exported.Flags&ast.SymbolFlagsVariable != 0:
-			member.Kind = "variable"
-		default:
-			member.Kind = "unknown"
-		}
-		members = append(members, member)
-	}
-	return members
 }
 
 func (e *Emitter) emitFileImports(sf *ast.SourceFile) {
@@ -491,7 +441,8 @@ func (e *Emitter) emitFileImports(sf *ast.SourceFile) {
 
 func (e *Emitter) emitFileExports(sf *ast.SourceFile) {
 	for _, stmt := range sf.Statements.Nodes {
-		if stmt.Kind == ast.KindExportDeclaration {
+		switch stmt.Kind {
+		case ast.KindExportDeclaration:
 			exportDecl := stmt.AsExportDeclaration()
 			if exportDecl.ExportClause != nil {
 				ec := exportDecl.ExportClause
@@ -519,28 +470,23 @@ func (e *Emitter) emitFileExports(sf *ast.SourceFile) {
 					Symbol: "",
 				})
 			}
-		}
-	}
-}
-
-func (e *Emitter) emitSymbolTable(table ast.SymbolTable) {
-	if table == nil {
-		return
-	}
-	for _, sym := range table {
-		flags := sym.Flags
-
-		if flags&ast.SymbolFlagsClass != 0 {
-			e.irProgram.Classes = append(e.irProgram.Classes, &Class{
-				Name:   sym.Name,
-				Symbol: e.getOrCreateSymbolId(sym),
-			})
-		}
-		if flags&ast.SymbolFlagsInterface != 0 {
-			e.irProgram.Interfaces = append(e.irProgram.Interfaces, &Interface{
-				Name:   sym.Name,
-				Symbol: e.getOrCreateSymbolId(sym),
-			})
+		case ast.KindExportAssignment:
+			exportAssign := stmt.AsExportAssignment()
+			if !exportAssign.IsExportEquals {
+				sym := stmt.Symbol()
+				name := "default"
+				if exportAssign.Expression != nil {
+					if id := exportAssign.Expression.AsIdentifier(); id != nil {
+						name = id.Text
+					}
+				}
+				e.irProgram.Exports = append(e.irProgram.Exports, &Export{
+					Kind:      "default",
+					Name:      name,
+					Symbol:    e.getOrCreateSymbolId(sym),
+					IsDefault: true,
+				})
+			}
 		}
 	}
 }
@@ -612,6 +558,9 @@ func (e *Emitter) emitClassProperty(prop *ast.Symbol, irClass *Class) {
 		if propType != nil {
 			irProp.Type = e.getOrCreateTypeId(propType)
 		}
+		if len(prop.Declarations) > 0 {
+			irProp.IsReadonly = ast.HasSyntacticModifier(prop.Declarations[0], ast.ModifierFlagsReadonly)
+		}
 		irClass.Properties = append(irClass.Properties, irProp)
 	}
 }
@@ -620,6 +569,14 @@ func (e *Emitter) emitMethod(sym *ast.Symbol) *Method {
 	method := &Method{
 		Name:   sym.Name,
 		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if len(sym.Declarations) > 0 {
+		decl := sym.Declarations[0]
+		method.IsStatic = ast.HasSyntacticModifier(decl, ast.ModifierFlagsStatic)
+		method.IsAbstract = ast.HasSyntacticModifier(decl, ast.ModifierFlagsAbstract)
+		method.IsPrivate = ast.HasSyntacticModifier(decl, ast.ModifierFlagsPrivate)
+		method.IsProtected = ast.HasSyntacticModifier(decl, ast.ModifierFlagsProtected)
 	}
 
 	sig := e.checker.GetResolvedSignature(sym.Declarations[0])
@@ -674,6 +631,9 @@ func (e *Emitter) emitInterfaceFromSymbol(sym *ast.Symbol) {
 			if propType != nil {
 				irProp.Type = e.getOrCreateTypeId(propType)
 			}
+			if len(prop.Declarations) > 0 {
+				irProp.IsReadonly = ast.HasSyntacticModifier(prop.Declarations[0], ast.ModifierFlagsReadonly)
+			}
 			irIntf.Properties = append(irIntf.Properties, irProp)
 		}
 
@@ -697,6 +657,10 @@ func (e *Emitter) emitEnumFromSymbol(sym *ast.Symbol) {
 		Symbol: e.getOrCreateSymbolId(sym),
 	}
 
+	if len(sym.Declarations) > 0 {
+		irEnum.IsConst = ast.IsEnumConst(sym.Declarations[0])
+	}
+
 	if sym.Members != nil {
 		for name, member := range sym.Members {
 			memberType := e.checker.GetTypeOfSymbol(member)
@@ -706,6 +670,9 @@ func (e *Emitter) emitEnumFromSymbol(sym *ast.Symbol) {
 			}
 			if memberType != nil {
 				irMember.Type = e.getOrCreateTypeId(memberType)
+			}
+			if len(member.Declarations) > 0 {
+				irMember.Value = e.checker.GetEnumMemberValue(member.Declarations[0])
 			}
 			irEnum.Members = append(irEnum.Members, irMember)
 		}
@@ -766,6 +733,8 @@ func (e *Emitter) emitNamespaceFromSymbol(sym *ast.Symbol) {
 				member.Kind = "namespace"
 			case exported.Flags&ast.SymbolFlagsTypeAlias != 0:
 				member.Kind = "typeAlias"
+			case exported.Flags&ast.SymbolFlagsVariable != 0:
+				member.Kind = "variable"
 			default:
 				member.Kind = "unknown"
 			}
@@ -1021,6 +990,12 @@ func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
 	if e.checker != nil {
 		if t := e.checker.GetTypeOfSymbol(sym); t != nil {
 			irSym.Type = e.getOrCreateTypeId(t)
+		}
+	}
+
+	if len(sym.Declarations) > 0 {
+		for _, decl := range sym.Declarations {
+			irSym.Declarations = append(irSym.Declarations, fmt.Sprintf("%d:%d", decl.Pos(), decl.End()))
 		}
 	}
 
