@@ -1,0 +1,2049 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "F:/WOLSTN/wts/test/enums_and_types.ts",
+      "source": "enum Color {\n  Red,\n  Green,\n  Blue\n}\n\nenum Status {\n  Active = 1,\n  Inactive = 0,\n  Pending = 2\n}\n\nconst enum Direction {\n  Up = \"UP\",\n  Down = \"DOWN\",\n  Left = \"LEFT\",\n  Right = \"RIGHT\"\n}\n\ntype Point = {\n  x: number;\n  y: number;\n};\n\ntype Vector2D = Point \u0026 { z: number };\n\ntype ID = string | number;\n\ntype Callback\u003cT\u003e = (value: T) =\u003e void;\n\nnamespace Utils {\n  export function log(msg: string): void {\n    console.log(msg);\n  }\n\n  export const VERSION = \"1.0.0\";\n\n  export interface Config {\n    debug: boolean;\n  }\n}\n\nnamespace Math {\n  export function square(x: number): number {\n    return x * x;\n  }\n}\n\nconst c: Color = Color.Red;\nconst status: Status = Status.Active;\nconst dir: Direction = Direction.Up;\nconst point: Point = { x: 1, y: 2 };\nconst id: ID = \"test-123\";\n",
+      "rootNode": {
+        "kind": "KindSourceFile",
+        "pos": 0,
+        "end": 777,
+        "children": [
+          {
+            "kind": "KindEnumDeclaration",
+            "pos": 0,
+            "end": 37,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 4,
+                "end": 10,
+                "symbol": "s1",
+                "type": "t2",
+                "text": "Color"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 12,
+                "end": 18,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 12,
+                    "end": 18,
+                    "symbol": "s2",
+                    "type": "t7",
+                    "text": "Red"
+                  }
+                ],
+                "type": "t7"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 19,
+                "end": 27,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 19,
+                    "end": 27,
+                    "symbol": "s3",
+                    "type": "t8",
+                    "text": "Green"
+                  }
+                ],
+                "type": "t8"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 28,
+                "end": 35,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 28,
+                    "end": 35,
+                    "symbol": "s4",
+                    "type": "t9",
+                    "text": "Blue"
+                  }
+                ],
+                "type": "t9"
+              }
+            ],
+            "type": "t2"
+          },
+          {
+            "kind": "KindEnumDeclaration",
+            "pos": 37,
+            "end": 98,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 43,
+                "end": 50,
+                "symbol": "s5",
+                "type": "t10",
+                "text": "Status"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 52,
+                "end": 65,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 52,
+                    "end": 61,
+                    "symbol": "s6",
+                    "type": "t15",
+                    "text": "Active"
+                  },
+                  {
+                    "kind": "KindNumericLiteral",
+                    "pos": 63,
+                    "end": 65,
+                    "type": "t16"
+                  }
+                ],
+                "type": "t15"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 66,
+                "end": 81,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 66,
+                    "end": 77,
+                    "symbol": "s7",
+                    "type": "t17",
+                    "text": "Inactive"
+                  },
+                  {
+                    "kind": "KindNumericLiteral",
+                    "pos": 79,
+                    "end": 81,
+                    "type": "t18"
+                  }
+                ],
+                "type": "t17"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 82,
+                "end": 96,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 82,
+                    "end": 92,
+                    "symbol": "s8",
+                    "type": "t19",
+                    "text": "Pending"
+                  },
+                  {
+                    "kind": "KindNumericLiteral",
+                    "pos": 94,
+                    "end": 96,
+                    "type": "t20"
+                  }
+                ],
+                "type": "t19"
+              }
+            ],
+            "type": "t10"
+          },
+          {
+            "kind": "KindEnumDeclaration",
+            "pos": 98,
+            "end": 189,
+            "children": [
+              {
+                "kind": "KindConstKeyword",
+                "pos": 98,
+                "end": 105,
+                "type": "t1"
+              },
+              {
+                "kind": "KindIdentifier",
+                "pos": 110,
+                "end": 120,
+                "symbol": "s9",
+                "type": "t21",
+                "text": "Direction"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 122,
+                "end": 134,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 122,
+                    "end": 127,
+                    "symbol": "s10",
+                    "type": "t27",
+                    "text": "Up"
+                  },
+                  {
+                    "kind": "KindStringLiteral",
+                    "pos": 129,
+                    "end": 134,
+                    "type": "t28",
+                    "text": "UP"
+                  }
+                ],
+                "type": "t27"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 135,
+                "end": 151,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 135,
+                    "end": 142,
+                    "symbol": "s11",
+                    "type": "t29",
+                    "text": "Down"
+                  },
+                  {
+                    "kind": "KindStringLiteral",
+                    "pos": 144,
+                    "end": 151,
+                    "type": "t30",
+                    "text": "DOWN"
+                  }
+                ],
+                "type": "t29"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 152,
+                "end": 168,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 152,
+                    "end": 159,
+                    "symbol": "s12",
+                    "type": "t31",
+                    "text": "Left"
+                  },
+                  {
+                    "kind": "KindStringLiteral",
+                    "pos": 161,
+                    "end": 168,
+                    "type": "t32",
+                    "text": "LEFT"
+                  }
+                ],
+                "type": "t31"
+              },
+              {
+                "kind": "KindEnumMember",
+                "pos": 169,
+                "end": 187,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 169,
+                    "end": 177,
+                    "symbol": "s13",
+                    "type": "t33",
+                    "text": "Right"
+                  },
+                  {
+                    "kind": "KindStringLiteral",
+                    "pos": 179,
+                    "end": 187,
+                    "type": "t34",
+                    "text": "RIGHT"
+                  }
+                ],
+                "type": "t33"
+              }
+            ],
+            "type": "t21"
+          },
+          {
+            "kind": "KindTypeAliasDeclaration",
+            "pos": 189,
+            "end": 234,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 195,
+                "end": 201,
+                "symbol": "s14",
+                "type": "t35",
+                "text": "Point"
+              },
+              {
+                "kind": "KindTypeLiteral",
+                "pos": 203,
+                "end": 233,
+                "children": [
+                  {
+                    "kind": "KindPropertySignature",
+                    "pos": 205,
+                    "end": 218,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 205,
+                        "end": 209,
+                        "symbol": "s15",
+                        "type": "t36",
+                        "text": "x"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 210,
+                        "end": 217,
+                        "type": "t36"
+                      }
+                    ],
+                    "type": "t36"
+                  },
+                  {
+                    "kind": "KindPropertySignature",
+                    "pos": 218,
+                    "end": 231,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 218,
+                        "end": 222,
+                        "symbol": "s16",
+                        "type": "t36",
+                        "text": "y"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 223,
+                        "end": 230,
+                        "type": "t36"
+                      }
+                    ],
+                    "type": "t36"
+                  }
+                ],
+                "type": "t35"
+              }
+            ],
+            "type": "t35"
+          },
+          {
+            "kind": "KindTypeAliasDeclaration",
+            "pos": 234,
+            "end": 274,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 240,
+                "end": 249,
+                "symbol": "s17",
+                "type": "t37",
+                "text": "Vector2D"
+              },
+              {
+                "kind": "KindIntersectionType",
+                "pos": 251,
+                "end": 273,
+                "children": [
+                  {
+                    "kind": "KindTypeReference",
+                    "pos": 251,
+                    "end": 257,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 251,
+                        "end": 257,
+                        "symbol": "s14",
+                        "type": "t1",
+                        "text": "Point"
+                      }
+                    ],
+                    "type": "t35"
+                  },
+                  {
+                    "kind": "KindTypeLiteral",
+                    "pos": 259,
+                    "end": 273,
+                    "children": [
+                      {
+                        "kind": "KindPropertySignature",
+                        "pos": 261,
+                        "end": 271,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 261,
+                            "end": 263,
+                            "symbol": "s18",
+                            "type": "t36",
+                            "text": "z"
+                          },
+                          {
+                            "kind": "KindNumberKeyword",
+                            "pos": 264,
+                            "end": 271,
+                            "type": "t36"
+                          }
+                        ],
+                        "type": "t36"
+                      }
+                    ],
+                    "type": "t38"
+                  }
+                ],
+                "type": "t37"
+              }
+            ],
+            "type": "t37"
+          },
+          {
+            "kind": "KindTypeAliasDeclaration",
+            "pos": 274,
+            "end": 302,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 280,
+                "end": 283,
+                "symbol": "s19",
+                "type": "t39",
+                "text": "ID"
+              },
+              {
+                "kind": "KindUnionType",
+                "pos": 285,
+                "end": 301,
+                "children": [
+                  {
+                    "kind": "KindStringKeyword",
+                    "pos": 285,
+                    "end": 292,
+                    "type": "t40"
+                  },
+                  {
+                    "kind": "KindNumberKeyword",
+                    "pos": 294,
+                    "end": 301,
+                    "type": "t36"
+                  }
+                ],
+                "type": "t39"
+              }
+            ],
+            "type": "t39"
+          },
+          {
+            "kind": "KindTypeAliasDeclaration",
+            "pos": 302,
+            "end": 342,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 308,
+                "end": 317,
+                "symbol": "s20",
+                "type": "t41",
+                "text": "Callback"
+              },
+              {
+                "kind": "KindTypeParameter",
+                "pos": 318,
+                "end": 319,
+                "children": [
+                  {
+                    "kind": "KindIdentifier",
+                    "pos": 318,
+                    "end": 319,
+                    "symbol": "s21",
+                    "type": "t42",
+                    "text": "T"
+                  }
+                ],
+                "type": "t42"
+              },
+              {
+                "kind": "KindFunctionType",
+                "pos": 322,
+                "end": 341,
+                "children": [
+                  {
+                    "kind": "KindParameter",
+                    "pos": 324,
+                    "end": 332,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 324,
+                        "end": 329,
+                        "symbol": "s22",
+                        "type": "t42",
+                        "text": "value"
+                      },
+                      {
+                        "kind": "KindTypeReference",
+                        "pos": 330,
+                        "end": 332,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 330,
+                            "end": 332,
+                            "symbol": "s21",
+                            "type": "t1",
+                            "text": "T"
+                          }
+                        ],
+                        "type": "t42"
+                      }
+                    ],
+                    "type": "t42"
+                  },
+                  {
+                    "kind": "KindVoidKeyword",
+                    "pos": 336,
+                    "end": 341,
+                    "type": "t43"
+                  }
+                ],
+                "type": "t41"
+              }
+            ],
+            "type": "t41"
+          },
+          {
+            "kind": "KindModuleDeclaration",
+            "pos": 342,
+            "end": 520,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 353,
+                "end": 359,
+                "symbol": "s23",
+                "type": "t44",
+                "text": "Utils"
+              },
+              {
+                "kind": "KindModuleBlock",
+                "pos": 359,
+                "end": 520,
+                "children": [
+                  {
+                    "kind": "KindFunctionDeclaration",
+                    "pos": 361,
+                    "end": 430,
+                    "children": [
+                      {
+                        "kind": "KindExportKeyword",
+                        "pos": 361,
+                        "end": 370,
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 379,
+                        "end": 383,
+                        "symbol": "s24",
+                        "type": "t45",
+                        "text": "log"
+                      },
+                      {
+                        "kind": "KindParameter",
+                        "pos": 384,
+                        "end": 395,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 384,
+                            "end": 387,
+                            "symbol": "s25",
+                            "type": "t40",
+                            "text": "msg"
+                          },
+                          {
+                            "kind": "KindStringKeyword",
+                            "pos": 388,
+                            "end": 395,
+                            "type": "t40"
+                          }
+                        ],
+                        "type": "t40"
+                      },
+                      {
+                        "kind": "KindVoidKeyword",
+                        "pos": 397,
+                        "end": 402,
+                        "type": "t43"
+                      },
+                      {
+                        "kind": "KindBlock",
+                        "pos": 402,
+                        "end": 430,
+                        "children": [
+                          {
+                            "kind": "KindExpressionStatement",
+                            "pos": 404,
+                            "end": 426,
+                            "children": [
+                              {
+                                "kind": "KindCallExpression",
+                                "pos": 404,
+                                "end": 425,
+                                "children": [
+                                  {
+                                    "kind": "KindPropertyAccessExpression",
+                                    "pos": 404,
+                                    "end": 420,
+                                    "children": [
+                                      {
+                                        "kind": "KindIdentifier",
+                                        "pos": 404,
+                                        "end": 416,
+                                        "type": "t1",
+                                        "text": "console"
+                                      },
+                                      {
+                                        "kind": "KindIdentifier",
+                                        "pos": 417,
+                                        "end": 420,
+                                        "type": "t1",
+                                        "text": "log"
+                                      }
+                                    ],
+                                    "type": "t1"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 421,
+                                    "end": 424,
+                                    "symbol": "s25",
+                                    "type": "t40",
+                                    "text": "msg"
+                                  }
+                                ],
+                                "type": "t1"
+                              }
+                            ],
+                            "type": "t1"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t45"
+                  },
+                  {
+                    "kind": "KindVariableStatement",
+                    "pos": 430,
+                    "end": 465,
+                    "children": [
+                      {
+                        "kind": "KindExportKeyword",
+                        "pos": 430,
+                        "end": 440,
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindVariableDeclarationList",
+                        "pos": 440,
+                        "end": 464,
+                        "children": [
+                          {
+                            "kind": "KindVariableDeclaration",
+                            "pos": 446,
+                            "end": 464,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 446,
+                                "end": 454,
+                                "symbol": "s26",
+                                "type": "t46",
+                                "text": "VERSION"
+                              },
+                              {
+                                "kind": "KindStringLiteral",
+                                "pos": 456,
+                                "end": 464,
+                                "type": "t47",
+                                "text": "1.0.0"
+                              }
+                            ],
+                            "type": "t46"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindInterfaceDeclaration",
+                    "pos": 465,
+                    "end": 518,
+                    "children": [
+                      {
+                        "kind": "KindExportKeyword",
+                        "pos": 465,
+                        "end": 475,
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 485,
+                        "end": 492,
+                        "symbol": "s27",
+                        "type": "t48",
+                        "text": "Config"
+                      },
+                      {
+                        "kind": "KindPropertySignature",
+                        "pos": 494,
+                        "end": 514,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 494,
+                            "end": 504,
+                            "symbol": "s28",
+                            "type": "t49",
+                            "text": "debug"
+                          },
+                          {
+                            "kind": "KindBooleanKeyword",
+                            "pos": 505,
+                            "end": 513,
+                            "type": "t49"
+                          }
+                        ],
+                        "type": "t49"
+                      }
+                    ],
+                    "type": "t48"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t44"
+          },
+          {
+            "kind": "KindModuleDeclaration",
+            "pos": 520,
+            "end": 608,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 531,
+                "end": 536,
+                "symbol": "s29",
+                "type": "t52",
+                "text": "Math"
+              },
+              {
+                "kind": "KindModuleBlock",
+                "pos": 536,
+                "end": 608,
+                "children": [
+                  {
+                    "kind": "KindFunctionDeclaration",
+                    "pos": 538,
+                    "end": 606,
+                    "children": [
+                      {
+                        "kind": "KindExportKeyword",
+                        "pos": 538,
+                        "end": 547,
+                        "type": "t1"
+                      },
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 556,
+                        "end": 563,
+                        "symbol": "s30",
+                        "type": "t53",
+                        "text": "square"
+                      },
+                      {
+                        "kind": "KindParameter",
+                        "pos": 564,
+                        "end": 573,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 564,
+                            "end": 565,
+                            "symbol": "s31",
+                            "type": "t36",
+                            "text": "x"
+                          },
+                          {
+                            "kind": "KindNumberKeyword",
+                            "pos": 566,
+                            "end": 573,
+                            "type": "t36"
+                          }
+                        ],
+                        "type": "t36"
+                      },
+                      {
+                        "kind": "KindNumberKeyword",
+                        "pos": 575,
+                        "end": 582,
+                        "type": "t36"
+                      },
+                      {
+                        "kind": "KindBlock",
+                        "pos": 582,
+                        "end": 606,
+                        "children": [
+                          {
+                            "kind": "KindReturnStatement",
+                            "pos": 584,
+                            "end": 602,
+                            "children": [
+                              {
+                                "kind": "KindBinaryExpression",
+                                "pos": 595,
+                                "end": 601,
+                                "children": [
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 595,
+                                    "end": 597,
+                                    "symbol": "s31",
+                                    "type": "t36",
+                                    "text": "x"
+                                  },
+                                  {
+                                    "kind": "KindAsteriskToken",
+                                    "pos": 597,
+                                    "end": 599,
+                                    "type": "t1"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 599,
+                                    "end": 601,
+                                    "symbol": "s31",
+                                    "type": "t36",
+                                    "text": "x"
+                                  }
+                                ],
+                                "type": "t36"
+                              }
+                            ],
+                            "type": "t1"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t53"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t52"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 608,
+            "end": 637,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 608,
+                "end": 636,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 615,
+                    "end": 636,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 615,
+                        "end": 617,
+                        "symbol": "s32",
+                        "type": "t2",
+                        "text": "c"
+                      },
+                      {
+                        "kind": "KindTypeReference",
+                        "pos": 618,
+                        "end": 624,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 618,
+                            "end": 624,
+                            "symbol": "s1",
+                            "type": "t1",
+                            "text": "Color"
+                          }
+                        ],
+                        "type": "t2"
+                      },
+                      {
+                        "kind": "KindPropertyAccessExpression",
+                        "pos": 626,
+                        "end": 636,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 626,
+                            "end": 632,
+                            "symbol": "s1",
+                            "type": "t6",
+                            "text": "Color"
+                          },
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 633,
+                            "end": 636,
+                            "symbol": "s2",
+                            "type": "t3",
+                            "text": "Red"
+                          }
+                        ],
+                        "symbol": "s2",
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t2"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 637,
+            "end": 675,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 637,
+                "end": 674,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 643,
+                    "end": 674,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 643,
+                        "end": 650,
+                        "symbol": "s33",
+                        "type": "t10",
+                        "text": "status"
+                      },
+                      {
+                        "kind": "KindTypeReference",
+                        "pos": 651,
+                        "end": 658,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 651,
+                            "end": 658,
+                            "symbol": "s5",
+                            "type": "t1",
+                            "text": "Status"
+                          }
+                        ],
+                        "type": "t10"
+                      },
+                      {
+                        "kind": "KindPropertyAccessExpression",
+                        "pos": 660,
+                        "end": 674,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 660,
+                            "end": 667,
+                            "symbol": "s5",
+                            "type": "t14",
+                            "text": "Status"
+                          },
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 668,
+                            "end": 674,
+                            "symbol": "s6",
+                            "type": "t11",
+                            "text": "Active"
+                          }
+                        ],
+                        "symbol": "s6",
+                        "type": "t11"
+                      }
+                    ],
+                    "type": "t10"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 675,
+            "end": 712,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 675,
+                "end": 711,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 681,
+                    "end": 711,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 681,
+                        "end": 685,
+                        "symbol": "s34",
+                        "type": "t21",
+                        "text": "dir"
+                      },
+                      {
+                        "kind": "KindTypeReference",
+                        "pos": 686,
+                        "end": 696,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 686,
+                            "end": 696,
+                            "symbol": "s9",
+                            "type": "t1",
+                            "text": "Direction"
+                          }
+                        ],
+                        "type": "t21"
+                      },
+                      {
+                        "kind": "KindPropertyAccessExpression",
+                        "pos": 698,
+                        "end": 711,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 698,
+                            "end": 708,
+                            "symbol": "s9",
+                            "type": "t26",
+                            "text": "Direction"
+                          },
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 709,
+                            "end": 711,
+                            "symbol": "s10",
+                            "type": "t22",
+                            "text": "Up"
+                          }
+                        ],
+                        "symbol": "s10",
+                        "type": "t22"
+                      }
+                    ],
+                    "type": "t21"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 712,
+            "end": 749,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 712,
+                "end": 748,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 718,
+                    "end": 748,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 718,
+                        "end": 724,
+                        "symbol": "s35",
+                        "type": "t35",
+                        "text": "point"
+                      },
+                      {
+                        "kind": "KindTypeReference",
+                        "pos": 725,
+                        "end": 731,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 725,
+                            "end": 731,
+                            "symbol": "s14",
+                            "type": "t1",
+                            "text": "Point"
+                          }
+                        ],
+                        "type": "t35"
+                      },
+                      {
+                        "kind": "KindObjectLiteralExpression",
+                        "pos": 733,
+                        "end": 748,
+                        "children": [
+                          {
+                            "kind": "KindPropertyAssignment",
+                            "pos": 735,
+                            "end": 740,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 735,
+                                "end": 737,
+                                "symbol": "s38",
+                                "type": "t36",
+                                "text": "x"
+                              },
+                              {
+                                "kind": "KindNumericLiteral",
+                                "pos": 738,
+                                "end": 740,
+                                "type": "t16"
+                              }
+                            ],
+                            "type": "t36"
+                          },
+                          {
+                            "kind": "KindPropertyAssignment",
+                            "pos": 741,
+                            "end": 746,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 741,
+                                "end": 743,
+                                "symbol": "s39",
+                                "type": "t36",
+                                "text": "y"
+                              },
+                              {
+                                "kind": "KindNumericLiteral",
+                                "pos": 744,
+                                "end": 746,
+                                "type": "t20"
+                              }
+                            ],
+                            "type": "t36"
+                          }
+                        ],
+                        "type": "t54"
+                      }
+                    ],
+                    "type": "t35"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 749,
+            "end": 776,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 749,
+                "end": 775,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 755,
+                    "end": 775,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 755,
+                        "end": 758,
+                        "symbol": "s40",
+                        "type": "t39",
+                        "text": "id"
+                      },
+                      {
+                        "kind": "KindTypeReference",
+                        "pos": 759,
+                        "end": 762,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 759,
+                            "end": 762,
+                            "symbol": "s19",
+                            "type": "t1",
+                            "text": "ID"
+                          }
+                        ],
+                        "type": "t39"
+                      },
+                      {
+                        "kind": "KindStringLiteral",
+                        "pos": 764,
+                        "end": 775,
+                        "type": "t55",
+                        "text": "test-123"
+                      }
+                    ],
+                    "type": "t39"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindEndOfFile",
+            "pos": 776,
+            "end": 777,
+            "type": "t1"
+          }
+        ],
+        "type": "t1"
+      }
+    }
+  ],
+  "types": [
+    {
+      "id": "t1",
+      "kind": "any",
+      "flags": 1
+    },
+    {
+      "id": "t3",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Red",
+      "value": "0"
+    },
+    {
+      "id": "t4",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Green",
+      "value": "1"
+    },
+    {
+      "id": "t5",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Blue",
+      "value": "2"
+    },
+    {
+      "id": "t2",
+      "kind": "union",
+      "flags": 134250496,
+      "name": "Color",
+      "members": [
+        "t3",
+        "t4",
+        "t5"
+      ]
+    },
+    {
+      "id": "t6",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Color"
+    },
+    {
+      "id": "t7",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Red",
+      "value": "0"
+    },
+    {
+      "id": "t8",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Green",
+      "value": "1"
+    },
+    {
+      "id": "t9",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Blue",
+      "value": "2"
+    },
+    {
+      "id": "t11",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Active",
+      "value": "1"
+    },
+    {
+      "id": "t12",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Inactive",
+      "value": "0"
+    },
+    {
+      "id": "t13",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Pending",
+      "value": "2"
+    },
+    {
+      "id": "t10",
+      "kind": "union",
+      "flags": 134250496,
+      "name": "Status",
+      "members": [
+        "t11",
+        "t12",
+        "t13"
+      ]
+    },
+    {
+      "id": "t14",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Status"
+    },
+    {
+      "id": "t15",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Active",
+      "value": "1"
+    },
+    {
+      "id": "t16",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "1"
+    },
+    {
+      "id": "t17",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Inactive",
+      "value": "0"
+    },
+    {
+      "id": "t18",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "0"
+    },
+    {
+      "id": "t19",
+      "kind": "literal",
+      "flags": 34816,
+      "name": "Pending",
+      "value": "2"
+    },
+    {
+      "id": "t20",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "2"
+    },
+    {
+      "id": "t22",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Up",
+      "value": "UP"
+    },
+    {
+      "id": "t23",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Down",
+      "value": "DOWN"
+    },
+    {
+      "id": "t24",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Left",
+      "value": "LEFT"
+    },
+    {
+      "id": "t25",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Right",
+      "value": "RIGHT"
+    },
+    {
+      "id": "t21",
+      "kind": "union",
+      "flags": 134250496,
+      "name": "Direction",
+      "members": [
+        "t22",
+        "t23",
+        "t24",
+        "t25"
+      ]
+    },
+    {
+      "id": "t26",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Direction"
+    },
+    {
+      "id": "t27",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Up",
+      "value": "UP"
+    },
+    {
+      "id": "t28",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "UP"
+    },
+    {
+      "id": "t29",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Down",
+      "value": "DOWN"
+    },
+    {
+      "id": "t30",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "DOWN"
+    },
+    {
+      "id": "t31",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Left",
+      "value": "LEFT"
+    },
+    {
+      "id": "t32",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "LEFT"
+    },
+    {
+      "id": "t33",
+      "kind": "literal",
+      "flags": 33792,
+      "name": "Right",
+      "value": "RIGHT"
+    },
+    {
+      "id": "t34",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "RIGHT"
+    },
+    {
+      "id": "t35",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdtype"
+    },
+    {
+      "id": "t36",
+      "kind": "number",
+      "flags": 64
+    },
+    {
+      "id": "t38",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdtype"
+    },
+    {
+      "id": "t37",
+      "kind": "intersection",
+      "flags": 268435456,
+      "members": [
+        "t35",
+        "t38"
+      ]
+    },
+    {
+      "id": "t40",
+      "kind": "string",
+      "flags": 32
+    },
+    {
+      "id": "t39",
+      "kind": "union",
+      "flags": 134217728,
+      "members": [
+        "t40",
+        "t36"
+      ]
+    },
+    {
+      "id": "t41",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdtype"
+    },
+    {
+      "id": "t42",
+      "kind": "typeParameter",
+      "flags": 524288,
+      "name": "T"
+    },
+    {
+      "id": "t43",
+      "kind": "void",
+      "flags": 16
+    },
+    {
+      "id": "t44",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Utils"
+    },
+    {
+      "id": "t45",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "log"
+    },
+    {
+      "id": "t46",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "1.0.0"
+    },
+    {
+      "id": "t47",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "1.0.0"
+    },
+    {
+      "id": "t48",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Config"
+    },
+    {
+      "id": "t50",
+      "kind": "literal",
+      "flags": 8192,
+      "value": false
+    },
+    {
+      "id": "t51",
+      "kind": "literal",
+      "flags": 8192,
+      "value": true
+    },
+    {
+      "id": "t49",
+      "kind": "boolean",
+      "flags": 134217984,
+      "members": [
+        "t50",
+        "t51"
+      ]
+    },
+    {
+      "id": "t52",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Math"
+    },
+    {
+      "id": "t53",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "square"
+    },
+    {
+      "id": "t54",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdobject",
+      "properties": [
+        {
+          "name": "x",
+          "symbol": "s36",
+          "type": "t36"
+        },
+        {
+          "name": "y",
+          "symbol": "s37",
+          "type": "t36"
+        }
+      ]
+    },
+    {
+      "id": "t55",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "test-123"
+    }
+  ],
+  "symbols": [
+    {
+      "id": "s1",
+      "name": "Color",
+      "flags": 256,
+      "kind": "enum",
+      "type": "t6"
+    },
+    {
+      "id": "s2",
+      "name": "Red",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t7"
+    },
+    {
+      "id": "s3",
+      "name": "Green",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t8"
+    },
+    {
+      "id": "s4",
+      "name": "Blue",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t9"
+    },
+    {
+      "id": "s5",
+      "name": "Status",
+      "flags": 256,
+      "kind": "enum",
+      "type": "t14"
+    },
+    {
+      "id": "s6",
+      "name": "Active",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t15"
+    },
+    {
+      "id": "s7",
+      "name": "Inactive",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t17"
+    },
+    {
+      "id": "s8",
+      "name": "Pending",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t19"
+    },
+    {
+      "id": "s9",
+      "name": "Direction",
+      "flags": 128,
+      "kind": "enum",
+      "type": "t26"
+    },
+    {
+      "id": "s10",
+      "name": "Up",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t27"
+    },
+    {
+      "id": "s11",
+      "name": "Down",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t29"
+    },
+    {
+      "id": "s12",
+      "name": "Left",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t31"
+    },
+    {
+      "id": "s13",
+      "name": "Right",
+      "flags": 8,
+      "kind": "unknown",
+      "type": "t33"
+    },
+    {
+      "id": "s14",
+      "name": "Point",
+      "flags": 524288,
+      "kind": "typeAlias",
+      "type": "t1"
+    },
+    {
+      "id": "s15",
+      "name": "x",
+      "flags": 4,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s16",
+      "name": "y",
+      "flags": 4,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s17",
+      "name": "Vector2D",
+      "flags": 524288,
+      "kind": "typeAlias",
+      "type": "t1"
+    },
+    {
+      "id": "s18",
+      "name": "z",
+      "flags": 4,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s19",
+      "name": "ID",
+      "flags": 524288,
+      "kind": "typeAlias",
+      "type": "t1"
+    },
+    {
+      "id": "s20",
+      "name": "Callback",
+      "flags": 524288,
+      "kind": "typeAlias",
+      "type": "t1"
+    },
+    {
+      "id": "s21",
+      "name": "T",
+      "flags": 262144,
+      "kind": "unknown",
+      "type": "t1"
+    },
+    {
+      "id": "s22",
+      "name": "value",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t42"
+    },
+    {
+      "id": "s23",
+      "name": "Utils",
+      "flags": 512,
+      "kind": "module",
+      "type": "t44"
+    },
+    {
+      "id": "s24",
+      "name": "log",
+      "flags": 16,
+      "kind": "function",
+      "type": "t45"
+    },
+    {
+      "id": "s25",
+      "name": "msg",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t40"
+    },
+    {
+      "id": "s26",
+      "name": "VERSION",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t46"
+    },
+    {
+      "id": "s27",
+      "name": "Config",
+      "flags": 64,
+      "kind": "interface",
+      "type": "t1"
+    },
+    {
+      "id": "s28",
+      "name": "debug",
+      "flags": 4,
+      "kind": "property",
+      "type": "t49"
+    },
+    {
+      "id": "s29",
+      "name": "Math",
+      "flags": 512,
+      "kind": "module",
+      "type": "t52"
+    },
+    {
+      "id": "s30",
+      "name": "square",
+      "flags": 16,
+      "kind": "function",
+      "type": "t53"
+    },
+    {
+      "id": "s31",
+      "name": "x",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t36"
+    },
+    {
+      "id": "s32",
+      "name": "c",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t2"
+    },
+    {
+      "id": "s33",
+      "name": "status",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t10"
+    },
+    {
+      "id": "s34",
+      "name": "dir",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t21"
+    },
+    {
+      "id": "s35",
+      "name": "point",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t35"
+    },
+    {
+      "id": "s36",
+      "name": "x",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s37",
+      "name": "y",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s38",
+      "name": "x",
+      "flags": 4,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s39",
+      "name": "y",
+      "flags": 4,
+      "kind": "property",
+      "type": "t36"
+    },
+    {
+      "id": "s40",
+      "name": "id",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t39"
+    }
+  ],
+  "globals": null,
+  "functions": null,
+  "classes": null,
+  "interfaces": null,
+  "enums": [
+    {
+      "name": "Color",
+      "symbol": "s1",
+      "members": [
+        {
+          "name": "Red",
+          "symbol": "s2",
+          "type": "t7"
+        },
+        {
+          "name": "Green",
+          "symbol": "s3",
+          "type": "t8"
+        },
+        {
+          "name": "Blue",
+          "symbol": "s4",
+          "type": "t9"
+        }
+      ]
+    },
+    {
+      "name": "Status",
+      "symbol": "s5",
+      "members": [
+        {
+          "name": "Active",
+          "symbol": "s6",
+          "value": "1",
+          "type": "t15"
+        },
+        {
+          "name": "Inactive",
+          "symbol": "s7",
+          "value": "0",
+          "type": "t17"
+        },
+        {
+          "name": "Pending",
+          "symbol": "s8",
+          "value": "2",
+          "type": "t19"
+        }
+      ]
+    },
+    {
+      "name": "Direction",
+      "symbol": "s9",
+      "members": [
+        {
+          "name": "Up",
+          "symbol": "s10",
+          "value": "UP",
+          "type": "t27"
+        },
+        {
+          "name": "Down",
+          "symbol": "s11",
+          "value": "DOWN",
+          "type": "t29"
+        },
+        {
+          "name": "Left",
+          "symbol": "s12",
+          "value": "LEFT",
+          "type": "t31"
+        },
+        {
+          "name": "Right",
+          "symbol": "s13",
+          "value": "RIGHT",
+          "type": "t33"
+        }
+      ],
+      "isConst": true
+    }
+  ],
+  "typeAliases": [
+    {
+      "name": "Point",
+      "symbol": "s14",
+      "target": "t35"
+    },
+    {
+      "name": "Vector2D",
+      "symbol": "s17",
+      "target": "t37"
+    },
+    {
+      "name": "ID",
+      "symbol": "s19",
+      "target": "t39"
+    },
+    {
+      "name": "Callback",
+      "symbol": "s20",
+      "typeParams": [
+        "s21"
+      ],
+      "target": "t41"
+    }
+  ],
+  "namespaces": [
+    {
+      "name": "Utils",
+      "symbol": "s23",
+      "members": [
+        {
+          "kind": "KindFunctionDeclaration",
+          "name": "log",
+          "symbol": "s24"
+        },
+        {
+          "kind": "KindInterfaceDeclaration",
+          "name": "Config",
+          "symbol": "s27"
+        }
+      ]
+    },
+    {
+      "name": "Math",
+      "symbol": "s29",
+      "members": [
+        {
+          "kind": "KindFunctionDeclaration",
+          "name": "square",
+          "symbol": "s30"
+        }
+      ]
+    }
+  ]
+}

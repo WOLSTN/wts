@@ -13,16 +13,19 @@ import (
 const Version = 1
 
 type Program struct {
-	Version   int         `json:"version"`
-	Files     []*File     `json:"files"`
-	Types     []*Type     `json:"types"`
-	Symbols   []*Symbol   `json:"symbols"`
-	Globals   []*Global   `json:"globals"`
-	Functions []*Function `json:"functions"`
-	Classes   []*Class    `json:"classes"`
+	Version    int          `json:"version"`
+	Files      []*File      `json:"files"`
+	Types      []*Type      `json:"types"`
+	Symbols    []*Symbol    `json:"symbols"`
+	Globals    []*Global    `json:"globals"`
+	Functions  []*Function  `json:"functions"`
+	Classes    []*Class     `json:"classes"`
 	Interfaces []*Interface `json:"interfaces"`
-	Imports   []*Import   `json:"imports,omitempty"`
-	Exports   []*Export   `json:"exports,omitempty"`
+	Enums      []*Enum      `json:"enums,omitempty"`
+	TypeAliases []*TypeAlias `json:"typeAliases,omitempty"`
+	Namespaces []*Namespace `json:"namespaces,omitempty"`
+	Imports    []*Import    `json:"imports,omitempty"`
+	Exports    []*Export    `json:"exports,omitempty"`
 }
 
 type File struct {
@@ -176,6 +179,39 @@ type Export struct {
 	Declaration *Declaration `json:"declaration,omitempty"`
 }
 
+type Enum struct {
+	Name      string        `json:"name"`
+	Symbol    string        `json:"symbol"`
+	Members   []*EnumMember `json:"members"`
+	IsConst   bool          `json:"isConst,omitempty"`
+}
+
+type EnumMember struct {
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+	Value  any    `json:"value,omitempty"`
+	Type   string `json:"type,omitempty"`
+}
+
+type TypeAlias struct {
+	Name       string   `json:"name"`
+	Symbol     string   `json:"symbol"`
+	TypeParams []string `json:"typeParams,omitempty"`
+	Target     string   `json:"target"`
+}
+
+type Namespace struct {
+	Name      string       `json:"name"`
+	Symbol    string       `json:"symbol"`
+	Members   []*NamespaceMember `json:"members,omitempty"`
+}
+
+type NamespaceMember struct {
+	Kind   string `json:"kind"`
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+}
+
 type Param struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
@@ -212,6 +248,11 @@ type Expression struct {
 	Property   *Expression `json:"property,omitempty"`
 	Elements   []Expression `json:"elements,omitempty"`
 	Properties []PropertyInit `json:"properties,omitempty"`
+	Condition  *Expression `json:"condition,omitempty"`
+	Consequent *Expression `json:"consequent,omitempty"`
+	Alternate  *Expression `json:"alternate,omitempty"`
+	Parameters []Param     `json:"parameters,omitempty"`
+	Body       *Block      `json:"body,omitempty"`
 }
 
 type PropertyInit struct {
@@ -287,6 +328,9 @@ func (e *Emitter) Emit() (*Program, error) {
 		e.collectFunctions(sourceFile)
 		e.collectClasses(sourceFile)
 		e.collectInterfaces(sourceFile)
+		e.collectEnums(sourceFile)
+		e.collectTypeAliases(sourceFile)
+		e.collectNamespaces(sourceFile)
 		e.collectImports(sourceFile)
 		e.collectExports(sourceFile)
 	}
@@ -724,9 +768,15 @@ func (e *Emitter) emitStatement(node *ast.Node) *Statement {
 		stmt.Return = ret
 
 	case ast.KindVariableStatement:
-		for _, s := range node.Statements() {
-			if s.Kind == ast.KindVariableDeclaration {
-				stmt.Declaration = e.emitVariableDeclaration(s)
+		vs := node.AsVariableStatement()
+		if vs != nil && vs.DeclarationList != nil {
+			declList := vs.DeclarationList.AsVariableDeclarationList()
+			if declList != nil && declList.Declarations != nil {
+				for _, decl := range declList.Declarations.Nodes {
+					if decl.Kind == ast.KindVariableDeclaration {
+						stmt.Declaration = e.emitVariableDeclaration(decl)
+					}
+				}
 			}
 		}
 
@@ -899,6 +949,95 @@ func (e *Emitter) emitExpression(node *ast.Node) *Expression {
 		if template != nil && template.Head != nil {
 			expr.Text = template.Head.Text()
 		}
+
+	case ast.KindArrowFunction:
+		arrow := node.AsArrowFunction()
+		for _, param := range arrow.Parameters.Nodes {
+			irParam := Param{}
+			if name := param.Name(); name != nil {
+				irParam.Name = name.Text()
+			}
+			if e.checker != nil {
+				if t := e.checker.GetTypeAtLocation(param); t != nil {
+					irParam.Type = e.getOrCreateTypeId(t)
+				}
+			}
+			expr.Parameters = append(expr.Parameters, irParam)
+		}
+		if arrow.Body != nil {
+			if block := arrow.Body.AsBlock(); block != nil {
+				expr.Body = e.emitBlock(arrow.Body)
+			} else {
+				expr.Body = &Block{
+					Statements: []Statement{{
+						Kind:       "ReturnStatement",
+						Return:     &ReturnStmt{Value: e.emitExpression(arrow.Body)},
+					}},
+				}
+			}
+		}
+
+	case ast.KindConditionalExpression:
+		cond := node.AsConditionalExpression()
+		expr.Condition = e.emitExpression(cond.Condition)
+		expr.Consequent = e.emitExpression(cond.WhenTrue)
+		expr.Alternate = e.emitExpression(cond.WhenFalse)
+
+	case ast.KindSpreadElement:
+		expr.Operand = e.emitExpression(node.Expression())
+
+	case ast.KindSpreadAssignment:
+		expr.Operand = e.emitExpression(node.Expression())
+
+	case ast.KindTypeOfExpression:
+		typeOf := node.AsTypeOfExpression()
+		expr.Operand = e.emitExpression(typeOf.Expression)
+
+	case ast.KindAwaitExpression:
+		await := node.AsAwaitExpression()
+		expr.Operand = e.emitExpression(await.Expression)
+
+	case ast.KindYieldExpression:
+		yield := node.AsYieldExpression()
+		if yield.Expression != nil {
+			expr.Operand = e.emitExpression(yield.Expression)
+		}
+
+	case ast.KindMetaProperty:
+		meta := node.AsMetaProperty()
+		if meta.KeywordToken == ast.KindNewKeyword {
+			if name := meta.Name(); name != nil {
+				expr.Text = "new." + name.Text()
+			}
+		} else if meta.KeywordToken == ast.KindImportKeyword {
+			if name := meta.Name(); name != nil {
+				expr.Text = "import." + name.Text()
+			}
+		}
+
+	case ast.KindDeleteExpression:
+		deleteExpr := node.AsDeleteExpression()
+		expr.Operand = e.emitExpression(deleteExpr.Expression)
+
+	case ast.KindVoidExpression:
+		voidExpr := node.AsVoidExpression()
+		expr.Operand = e.emitExpression(voidExpr.Expression)
+
+	case ast.KindNonNullExpression:
+		nonNull := node.AsNonNullExpression()
+		expr.Operand = e.emitExpression(nonNull.Expression)
+
+	case ast.KindAsExpression:
+		asExpr := node.AsAsExpression()
+		expr.Operand = e.emitExpression(asExpr.Expression)
+
+	case ast.KindTypeAssertionExpression:
+		typeAssert := node.AsTypeAssertion()
+		expr.Operand = e.emitExpression(typeAssert.Expression)
+
+	case ast.KindTaggedTemplateExpression:
+		tagged := node.AsTaggedTemplateExpression()
+		expr.Callee = e.emitExpression(tagged.Tag)
 	}
 
 	return expr
@@ -1495,6 +1634,215 @@ func (e *Emitter) emitExportAssignment(node *ast.Node) {
 	irExport.IsDefault = !ea.IsExportEquals
 
 	e.irProgram.Exports = append(e.irProgram.Exports, irExport)
+}
+
+func (e *Emitter) collectEnums(file *ast.SourceFile) {
+	file.AsNode().ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindEnumDeclaration {
+			e.emitEnum(child)
+		}
+		return false
+	})
+}
+
+func (e *Emitter) emitEnum(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return
+	}
+
+	irEnum := &Enum{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	enumDecl := node.AsEnumDeclaration()
+	if enumDecl != nil {
+		if modifiers := node.Modifiers(); modifiers != nil {
+			for _, mod := range modifiers.Nodes {
+				if mod.Kind == ast.KindConstKeyword {
+					irEnum.IsConst = true
+					break
+				}
+			}
+		}
+
+		for _, member := range enumDecl.Members.Nodes {
+			if member.Kind == ast.KindEnumMember {
+				irMember := e.emitEnumMember(member)
+				if irMember != nil {
+					irEnum.Members = append(irEnum.Members, irMember)
+				}
+			}
+		}
+	}
+
+	e.irProgram.Enums = append(e.irProgram.Enums, irEnum)
+}
+
+func (e *Emitter) emitEnumMember(node *ast.Node) *EnumMember {
+	if node == nil {
+		return nil
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return nil
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return nil
+	}
+
+	member := &EnumMember{
+		Name:   nameNode.Text(),
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if t := e.checker.GetTypeOfSymbol(sym); t != nil {
+		member.Type = e.getOrCreateTypeId(t)
+	}
+
+	enumMember := node.AsEnumMember()
+	if enumMember != nil && enumMember.Initializer != nil {
+		init := enumMember.Initializer
+		switch init.Kind {
+		case ast.KindNumericLiteral:
+			member.Value = init.Text()
+		case ast.KindStringLiteral:
+			member.Value = init.Text()
+		case ast.KindTrueKeyword:
+			member.Value = true
+		case ast.KindFalseKeyword:
+			member.Value = false
+		}
+	}
+
+	return member
+}
+
+func (e *Emitter) collectTypeAliases(file *ast.SourceFile) {
+	file.AsNode().ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindTypeAliasDeclaration {
+			e.emitTypeAlias(child)
+		}
+		return false
+	})
+}
+
+func (e *Emitter) emitTypeAlias(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return
+	}
+
+	irTypeAlias := &TypeAlias{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	if typeParams := node.TypeParameters(); len(typeParams) > 0 {
+		for _, tp := range typeParams {
+			tpSym := e.checker.GetSymbolAtLocation(tp.Name())
+			if tpSym != nil {
+				irTypeAlias.TypeParams = append(irTypeAlias.TypeParams, e.getOrCreateSymbolId(tpSym))
+			}
+		}
+	}
+
+	typeAliasDecl := node.AsTypeAliasDeclaration()
+	if typeAliasDecl != nil && typeAliasDecl.Type != nil {
+		if t := e.checker.GetTypeFromTypeNode(typeAliasDecl.Type); t != nil {
+			irTypeAlias.Target = e.getOrCreateTypeId(t)
+		}
+	}
+
+	e.irProgram.TypeAliases = append(e.irProgram.TypeAliases, irTypeAlias)
+}
+
+func (e *Emitter) collectNamespaces(file *ast.SourceFile) {
+	file.AsNode().ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindModuleDeclaration {
+			e.emitNamespace(child)
+		}
+		return false
+	})
+}
+
+func (e *Emitter) emitNamespace(node *ast.Node) {
+	if node == nil {
+		return
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return
+	}
+
+	irNamespace := &Namespace{
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
+
+	moduleDecl := node.AsModuleDeclaration()
+	if moduleDecl != nil && moduleDecl.Body != nil {
+		if block := moduleDecl.Body.AsModuleBlock(); block != nil {
+			for _, stmt := range block.Statements.Nodes {
+				irMember := e.emitNamespaceMember(stmt)
+				if irMember != nil {
+					irNamespace.Members = append(irNamespace.Members, irMember)
+				}
+			}
+		}
+	}
+
+	e.irProgram.Namespaces = append(e.irProgram.Namespaces, irNamespace)
+}
+
+func (e *Emitter) emitNamespaceMember(node *ast.Node) *NamespaceMember {
+	if node == nil {
+		return nil
+	}
+
+	nameNode := node.Name()
+	if nameNode == nil {
+		return nil
+	}
+
+	sym := e.checker.GetSymbolAtLocation(nameNode)
+	if sym == nil {
+		return nil
+	}
+
+	return &NamespaceMember{
+		Kind:   node.Kind.String(),
+		Name:   sym.Name,
+		Symbol: e.getOrCreateSymbolId(sym),
+	}
 }
 
 func (e *Emitter) emitExportDeclaration(node *ast.Node) {

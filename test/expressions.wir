@@ -1,0 +1,2226 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "F:/WOLSTN/wts/test/expressions.ts",
+      "source": "const add = (a: number, b: number): number =\u003e a + b;\n\nconst multiply = (x: number, y: number) =\u003e {\n  return x * y;\n};\n\nconst result = add(1, 2);\n\nconst max = (a: number, b: number) =\u003e a \u003e b ? a : b;\n\nconst min = a \u003c b ? a : b;\n\nconst arr1 = [1, 2, 3];\nconst arr2 = [...arr1, 4, 5];\n\nconst obj1 = { a: 1, b: 2 };\nconst obj2 = { ...obj1, c: 3 };\n\nconst typeStr = typeof 42;\n\nasync function asyncFunc() {\n  const value = await Promise.resolve(42);\n  return value;\n}\n\nfunction* generatorFunc() {\n  yield 1;\n  yield 2;\n}\n\nconst nonNull = obj1!.a;\n\nconst asserted = value as string;\n\nconst deleted = delete obj1.a;\n\nconst voided = void 0;\n\nclass Foo {\n  constructor() {\n    console.log(new.target);\n  }\n}\n\nconst tagged = tag`Hello ${name}!`;\n",
+      "rootNode": {
+        "kind": "KindSourceFile",
+        "pos": 0,
+        "end": 736,
+        "children": [
+          {
+            "kind": "KindVariableStatement",
+            "pos": 0,
+            "end": 52,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 0,
+                "end": 51,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 5,
+                    "end": 51,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 5,
+                        "end": 9,
+                        "symbol": "s1",
+                        "type": "t2",
+                        "text": "add"
+                      },
+                      {
+                        "kind": "KindArrowFunction",
+                        "pos": 11,
+                        "end": 51,
+                        "children": [
+                          {
+                            "kind": "KindParameter",
+                            "pos": 13,
+                            "end": 22,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 13,
+                                "end": 14,
+                                "symbol": "s2",
+                                "type": "t3",
+                                "text": "a"
+                              },
+                              {
+                                "kind": "KindNumberKeyword",
+                                "pos": 15,
+                                "end": 22,
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindParameter",
+                            "pos": 23,
+                            "end": 33,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 23,
+                                "end": 25,
+                                "symbol": "s3",
+                                "type": "t3",
+                                "text": "b"
+                              },
+                              {
+                                "kind": "KindNumberKeyword",
+                                "pos": 26,
+                                "end": 33,
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindNumberKeyword",
+                            "pos": 35,
+                            "end": 42,
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindEqualsGreaterThanToken",
+                            "pos": 42,
+                            "end": 45,
+                            "symbol": "s4",
+                            "type": "t1"
+                          },
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 45,
+                            "end": 51,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 45,
+                                "end": 47,
+                                "symbol": "s2",
+                                "type": "t3",
+                                "text": "a"
+                              },
+                              {
+                                "kind": "KindPlusToken",
+                                "pos": 47,
+                                "end": 49,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 49,
+                                "end": 51,
+                                "symbol": "s3",
+                                "type": "t3",
+                                "text": "b"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t2"
+                      }
+                    ],
+                    "type": "t2"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 52,
+            "end": 117,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 52,
+                "end": 116,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 59,
+                    "end": 116,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 59,
+                        "end": 68,
+                        "symbol": "s5",
+                        "type": "t4",
+                        "text": "multiply"
+                      },
+                      {
+                        "kind": "KindArrowFunction",
+                        "pos": 70,
+                        "end": 116,
+                        "children": [
+                          {
+                            "kind": "KindParameter",
+                            "pos": 72,
+                            "end": 81,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 72,
+                                "end": 73,
+                                "symbol": "s6",
+                                "type": "t3",
+                                "text": "x"
+                              },
+                              {
+                                "kind": "KindNumberKeyword",
+                                "pos": 74,
+                                "end": 81,
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindParameter",
+                            "pos": 82,
+                            "end": 92,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 82,
+                                "end": 84,
+                                "symbol": "s7",
+                                "type": "t3",
+                                "text": "y"
+                              },
+                              {
+                                "kind": "KindNumberKeyword",
+                                "pos": 85,
+                                "end": 92,
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindEqualsGreaterThanToken",
+                            "pos": 93,
+                            "end": 96,
+                            "symbol": "s8",
+                            "type": "t1"
+                          },
+                          {
+                            "kind": "KindBlock",
+                            "pos": 96,
+                            "end": 116,
+                            "children": [
+                              {
+                                "kind": "KindReturnStatement",
+                                "pos": 98,
+                                "end": 114,
+                                "children": [
+                                  {
+                                    "kind": "KindBinaryExpression",
+                                    "pos": 107,
+                                    "end": 113,
+                                    "children": [
+                                      {
+                                        "kind": "KindIdentifier",
+                                        "pos": 107,
+                                        "end": 109,
+                                        "symbol": "s6",
+                                        "type": "t3",
+                                        "text": "x"
+                                      },
+                                      {
+                                        "kind": "KindAsteriskToken",
+                                        "pos": 109,
+                                        "end": 111,
+                                        "type": "t1"
+                                      },
+                                      {
+                                        "kind": "KindIdentifier",
+                                        "pos": 111,
+                                        "end": 113,
+                                        "symbol": "s7",
+                                        "type": "t3",
+                                        "text": "y"
+                                      }
+                                    ],
+                                    "type": "t3"
+                                  }
+                                ],
+                                "type": "t1"
+                              }
+                            ],
+                            "type": "t1"
+                          }
+                        ],
+                        "type": "t4"
+                      }
+                    ],
+                    "type": "t4"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 117,
+            "end": 144,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 117,
+                "end": 143,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 124,
+                    "end": 143,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 124,
+                        "end": 131,
+                        "symbol": "s9",
+                        "type": "t3",
+                        "text": "result"
+                      },
+                      {
+                        "kind": "KindCallExpression",
+                        "pos": 133,
+                        "end": 143,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 133,
+                            "end": 137,
+                            "symbol": "s1",
+                            "type": "t2",
+                            "text": "add"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 138,
+                            "end": 139,
+                            "type": "t5"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 140,
+                            "end": 142,
+                            "type": "t6"
+                          }
+                        ],
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 144,
+            "end": 198,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 144,
+                "end": 197,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 151,
+                    "end": 197,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 151,
+                        "end": 155,
+                        "symbol": "s10",
+                        "type": "t7",
+                        "text": "max"
+                      },
+                      {
+                        "kind": "KindArrowFunction",
+                        "pos": 157,
+                        "end": 197,
+                        "children": [
+                          {
+                            "kind": "KindParameter",
+                            "pos": 159,
+                            "end": 168,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 159,
+                                "end": 160,
+                                "symbol": "s11",
+                                "type": "t3",
+                                "text": "a"
+                              },
+                              {
+                                "kind": "KindNumberKeyword",
+                                "pos": 161,
+                                "end": 168,
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindParameter",
+                            "pos": 169,
+                            "end": 179,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 169,
+                                "end": 171,
+                                "symbol": "s12",
+                                "type": "t3",
+                                "text": "b"
+                              },
+                              {
+                                "kind": "KindNumberKeyword",
+                                "pos": 172,
+                                "end": 179,
+                                "type": "t3"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindEqualsGreaterThanToken",
+                            "pos": 180,
+                            "end": 183,
+                            "symbol": "s13",
+                            "type": "t1"
+                          },
+                          {
+                            "kind": "KindConditionalExpression",
+                            "pos": 183,
+                            "end": 197,
+                            "children": [
+                              {
+                                "kind": "KindBinaryExpression",
+                                "pos": 183,
+                                "end": 189,
+                                "children": [
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 183,
+                                    "end": 185,
+                                    "symbol": "s11",
+                                    "type": "t3",
+                                    "text": "a"
+                                  },
+                                  {
+                                    "kind": "KindGreaterThanToken",
+                                    "pos": 185,
+                                    "end": 187,
+                                    "type": "t1"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 187,
+                                    "end": 189,
+                                    "symbol": "s12",
+                                    "type": "t3",
+                                    "text": "b"
+                                  }
+                                ],
+                                "type": "t8"
+                              },
+                              {
+                                "kind": "KindQuestionToken",
+                                "pos": 189,
+                                "end": 191,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 191,
+                                "end": 193,
+                                "symbol": "s11",
+                                "type": "t3",
+                                "text": "a"
+                              },
+                              {
+                                "kind": "KindColonToken",
+                                "pos": 193,
+                                "end": 195,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 195,
+                                "end": 197,
+                                "symbol": "s12",
+                                "type": "t3",
+                                "text": "b"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t7"
+                      }
+                    ],
+                    "type": "t7"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 198,
+            "end": 226,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 198,
+                "end": 225,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 205,
+                    "end": 225,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 205,
+                        "end": 209,
+                        "symbol": "s14",
+                        "type": "t1",
+                        "text": "min"
+                      },
+                      {
+                        "kind": "KindConditionalExpression",
+                        "pos": 211,
+                        "end": 225,
+                        "children": [
+                          {
+                            "kind": "KindBinaryExpression",
+                            "pos": 211,
+                            "end": 217,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 211,
+                                "end": 213,
+                                "type": "t1",
+                                "text": "a"
+                              },
+                              {
+                                "kind": "KindLessThanToken",
+                                "pos": 213,
+                                "end": 215,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 215,
+                                "end": 217,
+                                "type": "t1",
+                                "text": "b"
+                              }
+                            ],
+                            "type": "t8"
+                          },
+                          {
+                            "kind": "KindQuestionToken",
+                            "pos": 217,
+                            "end": 219,
+                            "type": "t1"
+                          },
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 219,
+                            "end": 221,
+                            "type": "t1",
+                            "text": "a"
+                          },
+                          {
+                            "kind": "KindColonToken",
+                            "pos": 221,
+                            "end": 223,
+                            "type": "t1"
+                          },
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 223,
+                            "end": 225,
+                            "type": "t1",
+                            "text": "b"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 226,
+            "end": 251,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 226,
+                "end": 250,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 233,
+                    "end": 250,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 233,
+                        "end": 238,
+                        "symbol": "s15",
+                        "type": "t11",
+                        "text": "arr1"
+                      },
+                      {
+                        "kind": "KindArrayLiteralExpression",
+                        "pos": 240,
+                        "end": 250,
+                        "children": [
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 242,
+                            "end": 243,
+                            "type": "t5"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 244,
+                            "end": 246,
+                            "type": "t6"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 247,
+                            "end": 249,
+                            "type": "t12"
+                          }
+                        ],
+                        "type": "t11"
+                      }
+                    ],
+                    "type": "t11"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 251,
+            "end": 281,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 251,
+                "end": 280,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 257,
+                    "end": 280,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 257,
+                        "end": 262,
+                        "symbol": "s16",
+                        "type": "t11",
+                        "text": "arr2"
+                      },
+                      {
+                        "kind": "KindArrayLiteralExpression",
+                        "pos": 264,
+                        "end": 280,
+                        "children": [
+                          {
+                            "kind": "KindSpreadElement",
+                            "pos": 266,
+                            "end": 273,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 269,
+                                "end": 273,
+                                "symbol": "s15",
+                                "type": "t11",
+                                "text": "arr1"
+                              }
+                            ],
+                            "type": "t13"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 274,
+                            "end": 276,
+                            "type": "t14"
+                          },
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 277,
+                            "end": 279,
+                            "type": "t15"
+                          }
+                        ],
+                        "type": "t11"
+                      }
+                    ],
+                    "type": "t11"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 281,
+            "end": 311,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 281,
+                "end": 310,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 288,
+                    "end": 310,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 288,
+                        "end": 293,
+                        "symbol": "s19",
+                        "type": "t16",
+                        "text": "obj1"
+                      },
+                      {
+                        "kind": "KindObjectLiteralExpression",
+                        "pos": 295,
+                        "end": 310,
+                        "children": [
+                          {
+                            "kind": "KindPropertyAssignment",
+                            "pos": 297,
+                            "end": 302,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 297,
+                                "end": 299,
+                                "symbol": "s22",
+                                "type": "t3",
+                                "text": "a"
+                              },
+                              {
+                                "kind": "KindNumericLiteral",
+                                "pos": 300,
+                                "end": 302,
+                                "type": "t5"
+                              }
+                            ],
+                            "type": "t3"
+                          },
+                          {
+                            "kind": "KindPropertyAssignment",
+                            "pos": 303,
+                            "end": 308,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 303,
+                                "end": 305,
+                                "symbol": "s23",
+                                "type": "t3",
+                                "text": "b"
+                              },
+                              {
+                                "kind": "KindNumericLiteral",
+                                "pos": 306,
+                                "end": 308,
+                                "type": "t6"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t17"
+                      }
+                    ],
+                    "type": "t16"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 311,
+            "end": 343,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 311,
+                "end": 342,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 317,
+                    "end": 342,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 317,
+                        "end": 322,
+                        "symbol": "s25",
+                        "type": "t18",
+                        "text": "obj2"
+                      },
+                      {
+                        "kind": "KindObjectLiteralExpression",
+                        "pos": 324,
+                        "end": 342,
+                        "children": [
+                          {
+                            "kind": "KindSpreadAssignment",
+                            "pos": 326,
+                            "end": 334,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 330,
+                                "end": 334,
+                                "symbol": "s19",
+                                "type": "t16",
+                                "text": "obj1"
+                              }
+                            ],
+                            "type": "t1"
+                          },
+                          {
+                            "kind": "KindPropertyAssignment",
+                            "pos": 335,
+                            "end": 340,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 335,
+                                "end": 337,
+                                "symbol": "s27",
+                                "type": "t3",
+                                "text": "c"
+                              },
+                              {
+                                "kind": "KindNumericLiteral",
+                                "pos": 338,
+                                "end": 340,
+                                "type": "t12"
+                              }
+                            ],
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t19"
+                      }
+                    ],
+                    "type": "t18"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 343,
+            "end": 371,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 343,
+                "end": 370,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 350,
+                    "end": 370,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 350,
+                        "end": 358,
+                        "symbol": "s28",
+                        "type": "t20",
+                        "text": "typeStr"
+                      },
+                      {
+                        "kind": "KindTypeOfExpression",
+                        "pos": 360,
+                        "end": 370,
+                        "children": [
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 367,
+                            "end": 370,
+                            "type": "t29"
+                          }
+                        ],
+                        "type": "t20"
+                      }
+                    ],
+                    "type": "t20"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindFunctionDeclaration",
+            "pos": 371,
+            "end": 462,
+            "children": [
+              {
+                "kind": "KindAsyncKeyword",
+                "pos": 371,
+                "end": 378,
+                "type": "t1"
+              },
+              {
+                "kind": "KindIdentifier",
+                "pos": 387,
+                "end": 397,
+                "symbol": "s29",
+                "type": "t30",
+                "text": "asyncFunc"
+              },
+              {
+                "kind": "KindBlock",
+                "pos": 399,
+                "end": 462,
+                "children": [
+                  {
+                    "kind": "KindVariableStatement",
+                    "pos": 401,
+                    "end": 444,
+                    "children": [
+                      {
+                        "kind": "KindVariableDeclarationList",
+                        "pos": 401,
+                        "end": 443,
+                        "children": [
+                          {
+                            "kind": "KindVariableDeclaration",
+                            "pos": 409,
+                            "end": 443,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 409,
+                                "end": 415,
+                                "symbol": "s30",
+                                "type": "t1",
+                                "text": "value"
+                              },
+                              {
+                                "kind": "KindAwaitExpression",
+                                "pos": 417,
+                                "end": 443,
+                                "children": [
+                                  {
+                                    "kind": "KindCallExpression",
+                                    "pos": 423,
+                                    "end": 443,
+                                    "children": [
+                                      {
+                                        "kind": "KindPropertyAccessExpression",
+                                        "pos": 423,
+                                        "end": 439,
+                                        "children": [
+                                          {
+                                            "kind": "KindIdentifier",
+                                            "pos": 423,
+                                            "end": 431,
+                                            "type": "t1",
+                                            "text": "Promise"
+                                          },
+                                          {
+                                            "kind": "KindIdentifier",
+                                            "pos": 432,
+                                            "end": 439,
+                                            "type": "t1",
+                                            "text": "resolve"
+                                          }
+                                        ],
+                                        "type": "t1"
+                                      },
+                                      {
+                                        "kind": "KindNumericLiteral",
+                                        "pos": 440,
+                                        "end": 442,
+                                        "type": "t29"
+                                      }
+                                    ],
+                                    "type": "t1"
+                                  }
+                                ],
+                                "type": "t1"
+                              }
+                            ],
+                            "type": "t1"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindReturnStatement",
+                    "pos": 444,
+                    "end": 460,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 453,
+                        "end": 459,
+                        "symbol": "s30",
+                        "type": "t1",
+                        "text": "value"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t30"
+          },
+          {
+            "kind": "KindFunctionDeclaration",
+            "pos": 462,
+            "end": 515,
+            "children": [
+              {
+                "kind": "KindAsteriskToken",
+                "pos": 472,
+                "end": 473,
+                "type": "t1"
+              },
+              {
+                "kind": "KindIdentifier",
+                "pos": 473,
+                "end": 487,
+                "symbol": "s31",
+                "type": "t31",
+                "text": "generatorFunc"
+              },
+              {
+                "kind": "KindBlock",
+                "pos": 489,
+                "end": 515,
+                "children": [
+                  {
+                    "kind": "KindExpressionStatement",
+                    "pos": 491,
+                    "end": 502,
+                    "children": [
+                      {
+                        "kind": "KindYieldExpression",
+                        "pos": 491,
+                        "end": 501,
+                        "children": [
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 499,
+                            "end": 501,
+                            "type": "t5"
+                          }
+                        ],
+                        "type": "t13"
+                      }
+                    ],
+                    "type": "t1"
+                  },
+                  {
+                    "kind": "KindExpressionStatement",
+                    "pos": 502,
+                    "end": 513,
+                    "children": [
+                      {
+                        "kind": "KindYieldExpression",
+                        "pos": 502,
+                        "end": 512,
+                        "children": [
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 510,
+                            "end": 512,
+                            "type": "t6"
+                          }
+                        ],
+                        "type": "t13"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t31"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 515,
+            "end": 541,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 515,
+                "end": 540,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 522,
+                    "end": 540,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 522,
+                        "end": 530,
+                        "symbol": "s32",
+                        "type": "t3",
+                        "text": "nonNull"
+                      },
+                      {
+                        "kind": "KindPropertyAccessExpression",
+                        "pos": 532,
+                        "end": 540,
+                        "children": [
+                          {
+                            "kind": "KindNonNullExpression",
+                            "pos": 532,
+                            "end": 538,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 532,
+                                "end": 537,
+                                "symbol": "s19",
+                                "type": "t16",
+                                "text": "obj1"
+                              }
+                            ],
+                            "type": "t16"
+                          },
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 539,
+                            "end": 540,
+                            "symbol": "s17",
+                            "type": "t3",
+                            "text": "a"
+                          }
+                        ],
+                        "symbol": "s17",
+                        "type": "t3"
+                      }
+                    ],
+                    "type": "t3"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 541,
+            "end": 576,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 541,
+                "end": 575,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 548,
+                    "end": 575,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 548,
+                        "end": 557,
+                        "symbol": "s33",
+                        "type": "t32",
+                        "text": "asserted"
+                      },
+                      {
+                        "kind": "KindAsExpression",
+                        "pos": 559,
+                        "end": 575,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 559,
+                            "end": 565,
+                            "type": "t1",
+                            "text": "value"
+                          },
+                          {
+                            "kind": "KindStringKeyword",
+                            "pos": 568,
+                            "end": 575,
+                            "type": "t32"
+                          }
+                        ],
+                        "type": "t32"
+                      }
+                    ],
+                    "type": "t32"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 576,
+            "end": 608,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 576,
+                "end": 607,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 583,
+                    "end": 607,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 583,
+                        "end": 591,
+                        "symbol": "s34",
+                        "type": "t8",
+                        "text": "deleted"
+                      },
+                      {
+                        "kind": "KindDeleteExpression",
+                        "pos": 593,
+                        "end": 607,
+                        "children": [
+                          {
+                            "kind": "KindPropertyAccessExpression",
+                            "pos": 600,
+                            "end": 607,
+                            "children": [
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 600,
+                                "end": 605,
+                                "symbol": "s19",
+                                "type": "t16",
+                                "text": "obj1"
+                              },
+                              {
+                                "kind": "KindIdentifier",
+                                "pos": 606,
+                                "end": 607,
+                                "symbol": "s17",
+                                "type": "t3",
+                                "text": "a"
+                              }
+                            ],
+                            "symbol": "s17",
+                            "type": "t3"
+                          }
+                        ],
+                        "type": "t8"
+                      }
+                    ],
+                    "type": "t8"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 608,
+            "end": 632,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 608,
+                "end": 631,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 615,
+                    "end": 631,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 615,
+                        "end": 622,
+                        "symbol": "s35",
+                        "type": "t33",
+                        "text": "voided"
+                      },
+                      {
+                        "kind": "KindVoidExpression",
+                        "pos": 624,
+                        "end": 631,
+                        "children": [
+                          {
+                            "kind": "KindNumericLiteral",
+                            "pos": 629,
+                            "end": 631,
+                            "type": "t34"
+                          }
+                        ],
+                        "type": "t33"
+                      }
+                    ],
+                    "type": "t33"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindClassDeclaration",
+            "pos": 632,
+            "end": 698,
+            "children": [
+              {
+                "kind": "KindIdentifier",
+                "pos": 639,
+                "end": 643,
+                "symbol": "s36",
+                "type": "t35",
+                "text": "Foo"
+              },
+              {
+                "kind": "KindConstructor",
+                "pos": 645,
+                "end": 696,
+                "children": [
+                  {
+                    "kind": "KindBlock",
+                    "pos": 661,
+                    "end": 696,
+                    "children": [
+                      {
+                        "kind": "KindExpressionStatement",
+                        "pos": 663,
+                        "end": 692,
+                        "children": [
+                          {
+                            "kind": "KindCallExpression",
+                            "pos": 663,
+                            "end": 691,
+                            "children": [
+                              {
+                                "kind": "KindPropertyAccessExpression",
+                                "pos": 663,
+                                "end": 679,
+                                "children": [
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 663,
+                                    "end": 675,
+                                    "type": "t1",
+                                    "text": "console"
+                                  },
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 676,
+                                    "end": 679,
+                                    "type": "t1",
+                                    "text": "log"
+                                  }
+                                ],
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindMetaProperty",
+                                "pos": 680,
+                                "end": 690,
+                                "children": [
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 684,
+                                    "end": 690,
+                                    "symbol": "s36",
+                                    "type": "t36",
+                                    "text": "target"
+                                  }
+                                ],
+                                "symbol": "s36",
+                                "type": "t36"
+                              }
+                            ],
+                            "type": "t1"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t35"
+          },
+          {
+            "kind": "KindVariableStatement",
+            "pos": 698,
+            "end": 735,
+            "children": [
+              {
+                "kind": "KindVariableDeclarationList",
+                "pos": 698,
+                "end": 734,
+                "children": [
+                  {
+                    "kind": "KindVariableDeclaration",
+                    "pos": 705,
+                    "end": 734,
+                    "children": [
+                      {
+                        "kind": "KindIdentifier",
+                        "pos": 705,
+                        "end": 712,
+                        "symbol": "s37",
+                        "type": "t1",
+                        "text": "tagged"
+                      },
+                      {
+                        "kind": "KindTaggedTemplateExpression",
+                        "pos": 714,
+                        "end": 734,
+                        "children": [
+                          {
+                            "kind": "KindIdentifier",
+                            "pos": 714,
+                            "end": 718,
+                            "type": "t1",
+                            "text": "tag"
+                          },
+                          {
+                            "kind": "KindTemplateExpression",
+                            "pos": 718,
+                            "end": 734,
+                            "children": [
+                              {
+                                "kind": "KindTemplateHead",
+                                "pos": 718,
+                                "end": 727,
+                                "type": "t1"
+                              },
+                              {
+                                "kind": "KindTemplateSpan",
+                                "pos": 727,
+                                "end": 734,
+                                "children": [
+                                  {
+                                    "kind": "KindIdentifier",
+                                    "pos": 727,
+                                    "end": 731,
+                                    "type": "t1",
+                                    "text": "name"
+                                  },
+                                  {
+                                    "kind": "KindTemplateTail",
+                                    "pos": 731,
+                                    "end": 734,
+                                    "type": "t1"
+                                  }
+                                ],
+                                "type": "t1"
+                              }
+                            ],
+                            "type": "t32"
+                          }
+                        ],
+                        "type": "t1"
+                      }
+                    ],
+                    "type": "t1"
+                  }
+                ],
+                "type": "t1"
+              }
+            ],
+            "type": "t1"
+          },
+          {
+            "kind": "KindEndOfFile",
+            "pos": 735,
+            "end": 736,
+            "type": "t1"
+          }
+        ],
+        "type": "t1"
+      }
+    }
+  ],
+  "types": [
+    {
+      "id": "t1",
+      "kind": "any",
+      "flags": 1
+    },
+    {
+      "id": "t3",
+      "kind": "number",
+      "flags": 64
+    },
+    {
+      "id": "t2",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdfunction",
+      "signatures": [
+        {
+          "kind": "call",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "t3"
+            },
+            {
+              "name": "b",
+              "type": "t3"
+            }
+          ],
+          "returnType": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t4",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdfunction",
+      "signatures": [
+        {
+          "kind": "call",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "t3"
+            },
+            {
+              "name": "y",
+              "type": "t3"
+            }
+          ],
+          "returnType": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t5",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "1"
+    },
+    {
+      "id": "t6",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "2"
+    },
+    {
+      "id": "t7",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdfunction",
+      "signatures": [
+        {
+          "kind": "call",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "t3"
+            },
+            {
+              "name": "b",
+              "type": "t3"
+            }
+          ],
+          "returnType": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t9",
+      "kind": "literal",
+      "flags": 8192,
+      "value": false
+    },
+    {
+      "id": "t10",
+      "kind": "literal",
+      "flags": 8192,
+      "value": true
+    },
+    {
+      "id": "t8",
+      "kind": "boolean",
+      "flags": 134217984,
+      "members": [
+        "t9",
+        "t10"
+      ]
+    },
+    {
+      "id": "t11",
+      "kind": "object",
+      "flags": 1048576
+    },
+    {
+      "id": "t12",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "3"
+    },
+    {
+      "id": "t13",
+      "kind": "any",
+      "flags": 1
+    },
+    {
+      "id": "t14",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "4"
+    },
+    {
+      "id": "t15",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "5"
+    },
+    {
+      "id": "t16",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdobject",
+      "properties": [
+        {
+          "name": "a",
+          "symbol": "s17",
+          "type": "t3"
+        },
+        {
+          "name": "b",
+          "symbol": "s18",
+          "type": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t17",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdobject",
+      "properties": [
+        {
+          "name": "a",
+          "symbol": "s20",
+          "type": "t3"
+        },
+        {
+          "name": "b",
+          "symbol": "s21",
+          "type": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t18",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdobject",
+      "properties": [
+        {
+          "name": "a",
+          "symbol": "s17",
+          "type": "t3"
+        },
+        {
+          "name": "b",
+          "symbol": "s18",
+          "type": "t3"
+        },
+        {
+          "name": "c",
+          "symbol": "s24",
+          "type": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t19",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "\ufffdobject",
+      "properties": [
+        {
+          "name": "a",
+          "symbol": "s17",
+          "type": "t3"
+        },
+        {
+          "name": "b",
+          "symbol": "s18",
+          "type": "t3"
+        },
+        {
+          "name": "c",
+          "symbol": "s26",
+          "type": "t3"
+        }
+      ]
+    },
+    {
+      "id": "t21",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "bigint"
+    },
+    {
+      "id": "t22",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "boolean"
+    },
+    {
+      "id": "t23",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "function"
+    },
+    {
+      "id": "t24",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "number"
+    },
+    {
+      "id": "t25",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "object"
+    },
+    {
+      "id": "t26",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "string"
+    },
+    {
+      "id": "t27",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "symbol"
+    },
+    {
+      "id": "t28",
+      "kind": "literal",
+      "flags": 1024,
+      "value": "undefined"
+    },
+    {
+      "id": "t20",
+      "kind": "union",
+      "flags": 134217728,
+      "members": [
+        "t21",
+        "t22",
+        "t23",
+        "t24",
+        "t25",
+        "t26",
+        "t27",
+        "t28"
+      ]
+    },
+    {
+      "id": "t29",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "42"
+    },
+    {
+      "id": "t30",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "asyncFunc"
+    },
+    {
+      "id": "t31",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "generatorFunc"
+    },
+    {
+      "id": "t32",
+      "kind": "string",
+      "flags": 32
+    },
+    {
+      "id": "t33",
+      "kind": "undefined",
+      "flags": 4
+    },
+    {
+      "id": "t34",
+      "kind": "literal",
+      "flags": 2048,
+      "value": "0"
+    },
+    {
+      "id": "t35",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Foo"
+    },
+    {
+      "id": "t36",
+      "kind": "object",
+      "flags": 1048576,
+      "name": "Foo"
+    },
+    {
+      "id": "t37",
+      "kind": "unknown",
+      "flags": 2
+    }
+  ],
+  "symbols": [
+    {
+      "id": "s1",
+      "name": "add",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t2"
+    },
+    {
+      "id": "s2",
+      "name": "a",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s3",
+      "name": "b",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s4",
+      "name": "\ufffdfunction",
+      "flags": 16,
+      "kind": "function",
+      "type": "t2"
+    },
+    {
+      "id": "s5",
+      "name": "multiply",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t4"
+    },
+    {
+      "id": "s6",
+      "name": "x",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s7",
+      "name": "y",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s8",
+      "name": "\ufffdfunction",
+      "flags": 16,
+      "kind": "function",
+      "type": "t4"
+    },
+    {
+      "id": "s9",
+      "name": "result",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s10",
+      "name": "max",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t7"
+    },
+    {
+      "id": "s11",
+      "name": "a",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s12",
+      "name": "b",
+      "flags": 1,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s13",
+      "name": "\ufffdfunction",
+      "flags": 16,
+      "kind": "function",
+      "type": "t7"
+    },
+    {
+      "id": "s14",
+      "name": "min",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t1"
+    },
+    {
+      "id": "s15",
+      "name": "arr1",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t11"
+    },
+    {
+      "id": "s16",
+      "name": "arr2",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t11"
+    },
+    {
+      "id": "s17",
+      "name": "a",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s18",
+      "name": "b",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s19",
+      "name": "obj1",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t16"
+    },
+    {
+      "id": "s20",
+      "name": "a",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s21",
+      "name": "b",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s22",
+      "name": "a",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s23",
+      "name": "b",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s24",
+      "name": "c",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s25",
+      "name": "obj2",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t18"
+    },
+    {
+      "id": "s26",
+      "name": "c",
+      "flags": 33554436,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s27",
+      "name": "c",
+      "flags": 4,
+      "kind": "property",
+      "type": "t3"
+    },
+    {
+      "id": "s28",
+      "name": "typeStr",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t20"
+    },
+    {
+      "id": "s29",
+      "name": "asyncFunc",
+      "flags": 16,
+      "kind": "function",
+      "type": "t30"
+    },
+    {
+      "id": "s30",
+      "name": "value",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t1"
+    },
+    {
+      "id": "s31",
+      "name": "generatorFunc",
+      "flags": 16,
+      "kind": "function",
+      "type": "t31"
+    },
+    {
+      "id": "s32",
+      "name": "nonNull",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t3"
+    },
+    {
+      "id": "s33",
+      "name": "asserted",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t32"
+    },
+    {
+      "id": "s34",
+      "name": "deleted",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t8"
+    },
+    {
+      "id": "s35",
+      "name": "voided",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t33"
+    },
+    {
+      "id": "s36",
+      "name": "Foo",
+      "flags": 32,
+      "kind": "class",
+      "type": "t36"
+    },
+    {
+      "id": "s37",
+      "name": "tagged",
+      "flags": 2,
+      "kind": "variable",
+      "type": "t1"
+    }
+  ],
+  "globals": null,
+  "functions": [
+    {
+      "name": "asyncFunc",
+      "symbol": "s29",
+      "signature": "",
+      "parameters": null,
+      "returnType": "t37",
+      "body": {
+        "statements": [
+          {
+            "kind": "KindVariableStatement",
+            "declaration": {
+              "name": "value",
+              "symbol": "s30",
+              "type": "t1",
+              "init": {
+                "kind": "KindAwaitExpression",
+                "type": "t1",
+                "operand": {
+                  "kind": "KindCallExpression",
+                  "type": "t1",
+                  "callee": {
+                    "kind": "KindPropertyAccessExpression",
+                    "type": "t1",
+                    "object": {
+                      "kind": "KindIdentifier",
+                      "text": "Promise",
+                      "type": "t1"
+                    },
+                    "property": {
+                      "kind": "KindIdentifier",
+                      "text": "resolve",
+                      "type": "t1"
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "kind": "KindNumericLiteral",
+                      "text": "42",
+                      "type": "t29"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "KindReturnStatement",
+            "return": {
+              "value": {
+                "kind": "KindIdentifier",
+                "text": "value",
+                "type": "t1",
+                "symbol": "s30"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "generatorFunc",
+      "symbol": "s31",
+      "signature": "",
+      "parameters": null,
+      "returnType": "t11",
+      "body": {
+        "statements": [
+          {
+            "kind": "KindExpressionStatement",
+            "expression": {
+              "kind": "KindYieldExpression",
+              "type": "t13",
+              "operand": {
+                "kind": "KindNumericLiteral",
+                "text": "1",
+                "type": "t5"
+              }
+            }
+          },
+          {
+            "kind": "KindExpressionStatement",
+            "expression": {
+              "kind": "KindYieldExpression",
+              "type": "t13",
+              "operand": {
+                "kind": "KindNumericLiteral",
+                "text": "2",
+                "type": "t6"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "classes": [
+    {
+      "name": "Foo",
+      "symbol": "s36"
+    }
+  ],
+  "interfaces": null
+}
