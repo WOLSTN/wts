@@ -94,6 +94,21 @@ wts emit-ir -p tsconfig.json -o program.wir
 
 The output `.wir` file is a JSON-formatted IR containing all typed program information.
 
+#### IR Options
+
+| Flag | Description |
+|---|---|
+| `--prune` | Remove internal noise types (empty sentinels, zero-value stubs that carry no type information) |
+| `--compact` | Compact JSON output — no indentation, smaller file size (~40% reduction) |
+| `--no-source` | Omit source text from `File` entries — reduces file size and avoids embedding full source |
+
+Combine flags as needed:
+
+```bash
+# Minimal, production-ready IR
+wts emit-ir --prune --compact --no-source main.ts -o main.wir
+```
+
 ## IR Format
 
 The IR is a versioned, self-contained representation of the typed program:

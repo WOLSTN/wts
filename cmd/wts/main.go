@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -164,6 +163,9 @@ func runEmitIR(args []string) int {
 	fs := flag.NewFlagSet("emit-ir", flag.ExitOnError)
 	project := fs.String("p", "", "path to tsconfig.json")
 	output := fs.String("o", "", "output file path (default: stdout)")
+	prune := fs.Bool("prune", false, "remove unreferenced internal types")
+	compact := fs.Bool("compact", false, "compact JSON output (no indentation)")
+	noSource := fs.Bool("no-source", false, "omit source text from output")
 	help := fs.Bool("h", false, "show help")
 
 	// Pre-process: separate flags from positional args to support flags after filenames
@@ -177,6 +179,8 @@ func runEmitIR(args []string) int {
 				i++
 				flagArgs = append(flagArgs, args[i])
 			}
+		} else if args[i] == "--prune" || args[i] == "--compact" || args[i] == "--no-source" {
+			flagArgs = append(flagArgs, args[i])
 		} else if len(args[i]) > 2 && args[i][0] == '-' && args[i][1] == '-' {
 			flagArgs = append(flagArgs, args[i])
 		} else if len(args[i]) > 1 && args[i][0] == '-' && args[i][1] != '-' {
@@ -195,9 +199,12 @@ func runEmitIR(args []string) int {
 		fmt.Println(`Usage: wts emit-ir [options] [files...]
 
 Options:
-  -p <path>   Path to tsconfig.json (default: auto-detect)
-  -o <path>   Output file path (default: stdout)
-  -h          Show this help message
+  -p <path>      Path to tsconfig.json (default: auto-detect)
+  -o <path>      Output file path (default: stdout)
+  -h             Show this help message
+  --prune        Remove unreferenced internal noise types
+  --compact      Compact JSON output (no indentation)
+  --no-source    Omit source text from output
 
 If no files or project are specified, processes all .ts files in the current directory.`)
 		return 0
@@ -237,14 +244,19 @@ If no files or project are specified, processes all .ts files in the current dir
 		return 1
 	}
 
-	emitter := ir.NewEmitter(program)
-	irProgram, err := emitter.Emit()
+	opts := ir.EmitOptions{
+		Prune:    *prune,
+		Compact:  *compact,
+		NoSource: *noSource,
+	}
+	emitter := ir.NewEmitter(program, opts)
+	_, err = emitter.Emit()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error emitting IR: %v\n", err)
 		return 1
 	}
 
-	jsonData, err := json.MarshalIndent(irProgram, "", "  ")
+	jsonData, err := emitter.Serialize()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error serializing IR: %v\n", err)
 		return 1

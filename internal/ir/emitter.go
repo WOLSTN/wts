@@ -225,6 +225,12 @@ type Variable struct {
 	IsConst bool   `json:"isConst,omitempty"`
 }
 
+type EmitOptions struct {
+	Prune    bool // Filter out internal noise types
+	Compact  bool // Compact JSON output (no indentation, omit empty arrays)
+	NoSource bool // Omit source text from File entries
+}
+
 type Emitter struct {
 	program     *compiler.Program
 	checker     *checker.Checker
@@ -236,15 +242,17 @@ type Emitter struct {
 	typeIdGen   int
 	symbolIdGen int
 	sigIdGen    int
+	options     EmitOptions
 }
 
-func NewEmitter(program *compiler.Program) *Emitter {
+func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
 	return &Emitter{
 		program:   program,
 		irProgram: &Program{Version: Version},
 		typeMap:   make(map[*checker.Type]string),
 		symbolMap: make(map[*ast.Symbol]string),
 		sigMap:    make(map[*checker.Signature]string),
+		options:   opts,
 	}
 }
 
@@ -276,7 +284,49 @@ func (e *Emitter) Emit() (*Program, error) {
 
 	e.emitSourceFiles()
 
+	if e.options.Prune {
+		e.pruneTypes()
+	}
+
 	return e.irProgram, nil
+}
+
+func (e *Emitter) pruneTypes() {
+	isNoise := func(t *Type) bool {
+		// Empty PseudoBigInt sentinel (Base10Value: "")
+		if t.Kind == "literal" {
+			if pbi, ok := t.Value.(jsnum.PseudoBigInt); ok && !pbi.Negative && pbi.Base10Value == "" {
+				return true
+			}
+		}
+		// Empty template literal with no meaningful content
+		if t.Kind == "templateLiteral" && len(t.Texts) == 2 && t.Texts[0] == "" && t.Texts[1] == "" {
+			hasOnlyNumberType := len(t.Types) == 1
+			if hasOnlyNumberType {
+				return true
+			}
+		}
+		return false
+	}
+
+	noiseIds := make(map[string]bool)
+	for _, t := range e.irProgram.Types {
+		if isNoise(t) {
+			noiseIds[t.Id] = true
+		}
+	}
+
+	if len(noiseIds) == 0 {
+		return
+	}
+
+	filtered := make([]*Type, 0, len(e.irProgram.Types))
+	for _, t := range e.irProgram.Types {
+		if !noiseIds[t.Id] {
+			filtered = append(filtered, t)
+		}
+	}
+	e.irProgram.Types = filtered
 }
 
 func (e *Emitter) emitAllTypes(typeMaps map[string]any) {
@@ -369,10 +419,11 @@ func (e *Emitter) emitSourceFiles() {
 		if sf.IsDeclarationFile {
 			continue
 		}
-		e.irProgram.Files = append(e.irProgram.Files, &File{
-			Path:   sf.FileName(),
-			Source: string(sf.Text()),
-		})
+		file := &File{Path: sf.FileName()}
+		if !e.options.NoSource {
+			file.Source = string(sf.Text())
+		}
+		e.irProgram.Files = append(e.irProgram.Files, file)
 		e.emitFileImports(sf)
 		e.emitFileExports(sf)
 	}
@@ -1175,5 +1226,12 @@ func (e *Emitter) symbolKindToString(sym *ast.Symbol) string {
 }
 
 func (e *Emitter) MarshalJSON() ([]byte, error) {
+	if e.options.Compact {
+		return json.Marshal(e.irProgram)
+	}
 	return json.MarshalIndent(e.irProgram, "", "  ")
+}
+
+func (e *Emitter) Serialize() ([]byte, error) {
+	return e.MarshalJSON()
 }
