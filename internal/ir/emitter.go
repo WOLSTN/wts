@@ -45,20 +45,38 @@ type Node struct {
 }
 
 type Type struct {
-	Id             string           `json:"id"`
-	Kind           string           `json:"kind"`
-	Flags          uint32           `json:"flags"`
-	Name           string           `json:"name,omitempty"`
-	Members        []string         `json:"members,omitempty"`
-	Properties     []*Property      `json:"properties,omitempty"`
-	Signatures     []*TypeSignature `json:"signatures,omitempty"`
-	TypeArgs       []string         `json:"typeArgs,omitempty"`
-	TypeParams     []string         `json:"typeParams,omitempty"`
-	Target         string           `json:"target,omitempty"`
-	Value          any              `json:"value,omitempty"`
-	ReturnType     string           `json:"returnType,omitempty"`
-	Constraint     string           `json:"constraint,omitempty"`
-	Default        string           `json:"default,omitempty"`
+	Id                 string           `json:"id"`
+	Kind               string           `json:"kind"`
+	Flags              uint32           `json:"flags"`
+	Name               string           `json:"name,omitempty"`
+	Members            []string         `json:"members,omitempty"`
+	Properties         []*Property      `json:"properties,omitempty"`
+	Signatures         []*TypeSignature `json:"signatures,omitempty"`
+	TypeArgs           []string         `json:"typeArgs,omitempty"`
+	TypeParams         []string         `json:"typeParams,omitempty"`
+	Target             string           `json:"target,omitempty"`
+	Value              any              `json:"value,omitempty"`
+	ReturnType         string           `json:"returnType,omitempty"`
+	Constraint         string           `json:"constraint,omitempty"`
+	Default            string           `json:"default,omitempty"`
+	Types              []string         `json:"types,omitempty"`
+	ObjectType         string           `json:"objectType,omitempty"`
+	IndexType          string           `json:"indexType,omitempty"`
+	CheckType          string           `json:"checkType,omitempty"`
+	ExtendsType        string           `json:"extendsType,omitempty"`
+	TrueType           string           `json:"trueType,omitempty"`
+	FalseType          string           `json:"falseType,omitempty"`
+	NameType           string           `json:"nameType,omitempty"`
+	TemplateType       string           `json:"templateType,omitempty"`
+	Texts              []string         `json:"texts,omitempty"`
+	ElementTypes       []string         `json:"elementTypes,omitempty"`
+	ElementFlags       []string         `json:"elementFlags,omitempty"`
+	BaseTypes          []string         `json:"baseTypes,omitempty"`
+	ObjectFlags        uint32           `json:"objectFlags,omitempty"`
+	IsReadonly         bool             `json:"isReadonly,omitempty"`
+	IsThisType         bool             `json:"isThisType,omitempty"`
+	IsDistributive     bool             `json:"isDistributive,omitempty"`
+	IndexInfos         []*IndexInfo     `json:"indexInfos,omitempty"`
 }
 
 type Property struct {
@@ -74,6 +92,12 @@ type TypeSignature struct {
 	Parameters     []Param  `json:"parameters,omitempty"`
 	ReturnType     string   `json:"returnType,omitempty"`
 	TypeParameters []string `json:"typeParameters,omitempty"`
+}
+
+type IndexInfo struct {
+	KeyType   string `json:"keyType"`
+	ValueType string `json:"valueType"`
+	IsReadonly bool  `json:"isReadonly,omitempty"`
 }
 
 type Symbol struct {
@@ -1569,8 +1593,188 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 		irType.Name = t.Symbol().Name
 	}
 
+	flags := t.Flags()
+
+	if flags&checker.TypeFlagsObject != 0 {
+		irType.ObjectFlags = uint32(t.ObjectFlags())
+	}
+
+	if flags&checker.TypeFlagsUnion != 0 {
+		unionType := t.AsUnionType()
+		for _, constituent := range unionType.Types() {
+			irType.Types = append(irType.Types, e.getOrCreateTypeId(constituent))
+		}
+	}
+
+	if flags&checker.TypeFlagsIntersection != 0 {
+		intersectionType := t.AsIntersectionType()
+		for _, constituent := range intersectionType.Types() {
+			irType.Types = append(irType.Types, e.getOrCreateTypeId(constituent))
+		}
+	}
+
+	if flags&checker.TypeFlagsTypeParameter != 0 {
+		if constraint := e.checker.GetConstraintOfTypeParameter(t); constraint != nil {
+			irType.Constraint = e.getOrCreateTypeId(constraint)
+		}
+		if defaultType := e.checker.GetDefaultFromTypeParameter(t); defaultType != nil {
+			irType.Default = e.getOrCreateTypeId(defaultType)
+		}
+		typeParam := t.AsTypeParameter()
+		irType.IsThisType = typeParam.IsThisType()
+	}
+
+	if flags&checker.TypeFlagsLiteral != 0 {
+		literalType := t.AsLiteralType()
+		irType.Value = literalType.Value()
+	}
+
+	if flags&checker.TypeFlagsStringLiteral != 0 {
+		literalType := t.AsLiteralType()
+		irType.Value = literalType.Value()
+	}
+
+	if flags&checker.TypeFlagsNumberLiteral != 0 {
+		literalType := t.AsLiteralType()
+		irType.Value = literalType.Value()
+	}
+
+	if flags&checker.TypeFlagsBooleanLiteral != 0 {
+		literalType := t.AsLiteralType()
+		irType.Value = literalType.Value()
+	}
+
+	if flags&checker.TypeFlagsIndex != 0 {
+		indexType := t.AsIndexType()
+		irType.Target = e.getOrCreateTypeId(indexType.Target())
+	}
+
+	if t.IsTupleType() {
+		tupleType := t.TargetTupleType()
+		if tupleType != nil {
+			irType.IsReadonly = tupleType.IsReadonly()
+			for _, info := range tupleType.ElementInfos() {
+				irType.ElementFlags = append(irType.ElementFlags, fmt.Sprintf("%d", info.TupleElementFlags()))
+			}
+		}
+	}
+
+	if flags&checker.TypeFlagsIndexedAccess != 0 {
+		indexedAccess := t.AsIndexedAccessType()
+		irType.ObjectType = e.getOrCreateTypeId(indexedAccess.ObjectType())
+		irType.IndexType = e.getOrCreateTypeId(indexedAccess.IndexType())
+	}
+
+	if flags&checker.TypeFlagsConditional != 0 {
+		conditionalType := t.AsConditionalType()
+		irType.CheckType = e.getOrCreateTypeId(conditionalType.CheckType())
+		irType.ExtendsType = e.getOrCreateTypeId(conditionalType.ExtendsType())
+	}
+
+	if flags&checker.TypeFlagsTemplateLiteral != 0 {
+		templateLiteral := t.AsTemplateLiteralType()
+		irType.Texts = templateLiteral.Texts()
+		for _, ty := range templateLiteral.Types() {
+			irType.Types = append(irType.Types, e.getOrCreateTypeId(ty))
+		}
+	}
+
+	if flags&checker.TypeFlagsStringMapping != 0 {
+		stringMapping := t.AsStringMappingType()
+		irType.Target = e.getOrCreateTypeId(stringMapping.Target())
+	}
+
+	if flags&checker.TypeFlagsSubstitution != 0 {
+		substitution := t.AsSubstitutionType()
+		irType.Target = e.getOrCreateTypeId(substitution.BaseType())
+		irType.Constraint = e.getOrCreateTypeId(substitution.SubstConstraint())
+	}
+
+	if flags&checker.TypeFlagsObject != 0 {
+		objectFlags := t.ObjectFlags()
+		if objectFlags&checker.ObjectFlagsReference != 0 {
+			if typeArgs := e.checker.GetTypeArguments(t); len(typeArgs) > 0 {
+				for _, typeArg := range typeArgs {
+					irType.TypeArgs = append(irType.TypeArgs, e.getOrCreateTypeId(typeArg))
+				}
+			}
+		}
+
+		if objectFlags&(checker.ObjectFlagsClassOrInterface) != 0 {
+			if baseTypes := e.checker.GetBaseTypes(t); len(baseTypes) > 0 {
+				for _, baseType := range baseTypes {
+					irType.BaseTypes = append(irType.BaseTypes, e.getOrCreateTypeId(baseType))
+				}
+			}
+		}
+
+		if props := e.checker.GetPropertiesOfType(t); len(props) > 0 {
+			for _, prop := range props {
+				propType := e.checker.GetTypeOfSymbol(prop)
+				irProp := &Property{
+					Name:       prop.Name,
+					Symbol:     e.getOrCreateSymbolId(prop),
+					IsOptional: prop.Flags&ast.SymbolFlagsOptional != 0,
+				}
+				if propType != nil {
+					irProp.Type = e.getOrCreateTypeId(propType)
+				}
+				irType.Properties = append(irType.Properties, irProp)
+			}
+		}
+
+		if callSigs := e.checker.GetCallSignatures(t); len(callSigs) > 0 {
+			for _, sig := range callSigs {
+				irSig := e.emitSignature(sig)
+				irType.Signatures = append(irType.Signatures, irSig)
+			}
+		}
+
+		if constructSigs := e.checker.GetConstructSignatures(t); len(constructSigs) > 0 {
+			for _, sig := range constructSigs {
+				irSig := e.emitSignature(sig)
+				irSig.Kind = "construct"
+				irType.Signatures = append(irType.Signatures, irSig)
+			}
+		}
+
+		if indexInfos := e.checker.GetIndexInfosOfType(t); len(indexInfos) > 0 {
+			for _, info := range indexInfos {
+				irIndexInfo := &IndexInfo{
+					KeyType:   e.getOrCreateTypeId(info.KeyType()),
+					ValueType: e.getOrCreateTypeId(info.ValueType()),
+				}
+				irType.IndexInfos = append(irType.IndexInfos, irIndexInfo)
+			}
+		}
+	}
+
 	e.irProgram.Types = append(e.irProgram.Types, irType)
 	return id
+}
+
+func (e *Emitter) emitSignature(sig *checker.Signature) *TypeSignature {
+	irSig := &TypeSignature{
+		Kind: "call",
+	}
+
+	for _, param := range sig.Parameters() {
+		irParam := Param{Name: param.Name}
+		if paramType := e.checker.GetTypeOfSymbol(param); paramType != nil {
+			irParam.Type = e.getOrCreateTypeId(paramType)
+		}
+		irSig.Parameters = append(irSig.Parameters, irParam)
+	}
+
+	if returnType := e.checker.GetReturnTypeOfSignature(sig); returnType != nil {
+		irSig.ReturnType = e.getOrCreateTypeId(returnType)
+	}
+
+	for _, typeParam := range sig.TypeParameters() {
+		irSig.TypeParameters = append(irSig.TypeParameters, e.getOrCreateTypeId(typeParam))
+	}
+
+	return irSig
 }
 
 func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
