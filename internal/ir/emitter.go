@@ -162,11 +162,7 @@ func (e *Emitter) emitNode(node *ast.Node) *Node {
 	}
 
 	if node.Kind == ast.KindIdentifier || node.Kind == ast.KindStringLiteral {
-		if node.IdentifierText() != "" {
-			irNode.Text = node.IdentifierText()
-		} else if str := node.StringLiteralText(); str != "" {
-			irNode.Text = str
-		}
+		irNode.Text = node.Text()
 	}
 
 	node.ForEachChild(func(child *ast.Node) bool {
@@ -307,10 +303,8 @@ func (e *Emitter) symbolKindToString(sym *ast.Symbol) string {
 		return "class"
 	case flags&ast.SymbolFlagsInterface != 0:
 		return "interface"
-	case flags&ast.SymbolFlagsVariable != 0:
+	case flags&ast.SymbolFlagsVariable != 0, flags&ast.SymbolFlagsBlockScopedVariable != 0:
 		return "variable"
-	case flags&ast.SymbolFlagsConst != 0:
-		return "const"
 	case flags&ast.SymbolFlagsMethod != 0:
 		return "method"
 	case flags&ast.SymbolFlagsProperty != 0:

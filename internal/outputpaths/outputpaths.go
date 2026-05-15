@@ -221,3 +221,7 @@ func GetBuildInfoFileName(options *core.CompilerOptions, opts tspath.ComparePath
 func GetCommonSourceDirectory(options *core.CompilerOptions, getRootFileNames func() []string, currentDirectory string, useCaseSensitiveFileNames bool, checkAllFilesInDirectory func(sourceFiles []string, rootDirectory string) bool) string {
 	return ""
 }
+
+func GetComputedCommonSourceDirectory(emittedFiles []string, currentDirectory string, useCaseSensitiveFileNames bool) string {
+	return ""
+}

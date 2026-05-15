@@ -7,16 +7,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
+	"github.com/wolstn/wts/internal/ast"
 	"github.com/wolstn/wts/internal/compiler"
 	"github.com/wolstn/wts/internal/core"
-	"github.com/wolstn/wts/internal/diagnostics"
 	"github.com/wolstn/wts/internal/diagnosticwriter"
 	"github.com/wolstn/wts/internal/ir"
 	"github.com/wolstn/wts/internal/tsoptions"
 	"github.com/wolstn/wts/internal/tspath"
-	"github.com/wolstn/wts/internal/vfs"
 	"github.com/wolstn/wts/internal/vfs/osvfs"
 )
 
@@ -66,9 +64,9 @@ Options:
 
 Examples:
   wts check main.ts
-  wts check --project tsconfig.json
+  wts check -p tsconfig.json
   wts emit-ir main.ts -o main.wir
-  wts emit-ir --project tsconfig.json -o program.wir`)
+  wts emit-ir -p tsconfig.json -o program.wir`)
 }
 
 func printVersion() {
@@ -108,40 +106,31 @@ If no files or project are specified, checks all .ts files in the current direct
 		return 1
 	}
 
-	configPath := *project
-	if configPath == "" && len(remainingArgs) == 0 {
-		configPath = findTsConfig(cwd)
-	}
-
-	var parsedConfig *tsoptions.ParsedCommandLine
-	if configPath != "" {
-		parsedConfig, err = parseTsConfig(configPath, cwd)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing tsconfig: %v\n", err)
-			return 1
-		}
-	} else if len(remainingArgs) > 0 {
-		parsedConfig = createConfigFromFiles(remainingArgs, cwd)
-	} else {
-		fmt.Fprintln(os.Stderr, "No input files or tsconfig.json found")
-		return 1
-	}
-
-	program, err := createProgram(parsedConfig, cwd)
+	program, err := createProgramFromArgs(*project, remainingArgs, cwd)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating program: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return 1
 	}
 
-	diags := program.GetSyntacticDiagnostics(context.Background())
-	diags = append(diags, program.GetSemanticDiagnostics(context.Background())...)
-	diags = append(diags, program.GetGlobalDiagnostics(context.Background())...)
+	ctx := context.Background()
+	var diags []*ast.Diagnostic
+	for _, sf := range program.GetSourceFiles() {
+		if !sf.IsDeclarationFile {
+			diags = append(diags, program.GetSyntacticDiagnostics(ctx, sf)...)
+			diags = append(diags, program.GetSemanticDiagnostics(ctx, sf)...)
+		}
+	}
+	diags = append(diags, program.GetGlobalDiagnostics(ctx)...)
 
 	if len(diags) > 0 {
-		writer := diagnosticwriter.New(os.Stderr, program.GetSourceFiles(), false)
-		for _, d := range diags {
-			writer.WriteDiagnostic(d)
+		formatOpts := &diagnosticwriter.FormattingOptions{
+			ComparePathsOptions: tspath.ComparePathsOptions{
+				CurrentDirectory:          cwd,
+				UseCaseSensitiveFileNames: false,
+			},
+			NewLine: "\n",
 		}
+		diagnosticwriter.FormatDiagnosticsWithColorAndContext(os.Stderr, diagnosticwriter.FromASTDiagnostics(diags), formatOpts)
 		fmt.Fprintf(os.Stderr, "\nFound %d error(s)\n", len(diags))
 		return 1
 	}
@@ -186,37 +175,29 @@ If no files or project are specified, processes all .ts files in the current dir
 		return 1
 	}
 
-	configPath := *project
-	if configPath == "" && len(remainingArgs) == 0 {
-		configPath = findTsConfig(cwd)
-	}
-
-	var parsedConfig *tsoptions.ParsedCommandLine
-	if configPath != "" {
-		parsedConfig, err = parseTsConfig(configPath, cwd)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing tsconfig: %v\n", err)
-			return 1
-		}
-	} else if len(remainingArgs) > 0 {
-		parsedConfig = createConfigFromFiles(remainingArgs, cwd)
-	} else {
-		fmt.Fprintln(os.Stderr, "No input files or tsconfig.json found")
-		return 1
-	}
-
-	program, err := createProgram(parsedConfig, cwd)
+	program, err := createProgramFromArgs(*project, remainingArgs, cwd)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating program: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return 1
 	}
 
-	diags := program.GetSyntacticDiagnostics(context.Background())
-	if len(diags) > 0 {
-		writer := diagnosticwriter.New(os.Stderr, program.GetSourceFiles(), false)
-		for _, d := range diags {
-			writer.WriteDiagnostic(d)
+	ctx := context.Background()
+	var diags []*ast.Diagnostic
+	for _, sf := range program.GetSourceFiles() {
+		if !sf.IsDeclarationFile {
+			diags = append(diags, program.GetSyntacticDiagnostics(ctx, sf)...)
 		}
+	}
+
+	if len(diags) > 0 {
+		formatOpts := &diagnosticwriter.FormattingOptions{
+			ComparePathsOptions: tspath.ComparePathsOptions{
+				CurrentDirectory:          cwd,
+				UseCaseSensitiveFileNames: false,
+			},
+			NewLine: "\n",
+		}
+		diagnosticwriter.FormatDiagnosticsWithColorAndContext(os.Stderr, diagnosticwriter.FromASTDiagnostics(diags), formatOpts)
 		fmt.Fprintf(os.Stderr, "\nFound %d syntax error(s)\n", len(diags))
 		return 1
 	}
@@ -228,7 +209,7 @@ If no files or project are specified, processes all .ts files in the current dir
 		return 1
 	}
 
-	jsonData, err := irProgram.ToJSON()
+	jsonData, err := json.MarshalIndent(irProgram, "", "  ")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error serializing IR: %v\n", err)
 		return 1
@@ -248,70 +229,52 @@ If no files or project are specified, processes all .ts files in the current dir
 	return 0
 }
 
-func findTsConfig(dir string) string {
-	tsconfigPath := filepath.Join(dir, "tsconfig.json")
-	if _, err := os.Stat(tsconfigPath); err == nil {
-		return tsconfigPath
-	}
-	return ""
-}
+func createProgramFromArgs(project string, files []string, cwd string) (*compiler.Program, error) {
+	var fileNames []string
 
-func parseTsConfig(configPath string, cwd string) (*tsoptions.ParsedCommandLine, error) {
-	absPath, err := filepath.Abs(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("resolving config path: %w", err)
-	}
-
-	fs := osvfs.FS()
-	parsedConfig, diags := tsoptions.ParseTsconfigFile(
-		context.Background(),
-		fs,
-		tspath.NormalizePath(absPath),
-		tsoptions.NewExtendedConfigCache(),
-	)
-
-	if len(diags) > 0 {
-		for _, d := range diags {
-			fmt.Fprintf(os.Stderr, "Config error: %s\n", d.Message())
-		}
-		if parsedConfig == nil {
-			return nil, fmt.Errorf("failed to parse tsconfig")
-		}
-	}
-
-	return parsedConfig, nil
-}
-
-func createConfigFromFiles(files []string, cwd string) *tsoptions.ParsedCommandLine {
-	compilerOptions := core.NewCompilerOptions()
-	compilerOptions.SetTarget(core.ScriptTargetESNext)
-	compilerOptions.SetModule(core.ModuleKindESNext)
-	compilerOptions.SetStrict(true)
-
-	var normalizedFiles []string
-	for _, f := range files {
-		abs, err := filepath.Abs(f)
+	if project != "" {
+		absPath, err := filepath.Abs(project)
 		if err != nil {
-			abs = f
+			return nil, fmt.Errorf("resolving project path: %w", err)
 		}
-		normalizedFiles = append(normalizedFiles, tspath.NormalizePath(abs))
+		fileNames = []string{absPath}
+	} else if len(files) > 0 {
+		for _, f := range files {
+			abs, err := filepath.Abs(f)
+			if err != nil {
+				abs = f
+			}
+			fileNames = append(fileNames, abs)
+		}
+	} else {
+		tsconfigPath := filepath.Join(cwd, "tsconfig.json")
+		if _, err := os.Stat(tsconfigPath); err == nil {
+			fileNames = []string{tsconfigPath}
+		} else {
+			return nil, fmt.Errorf("no input files or tsconfig.json found")
+		}
 	}
 
-	return tsoptions.NewParsedCommandLine(
-		compilerOptions,
-		normalizedFiles,
-		nil,
-	)
-}
+	compilerOptions := &core.CompilerOptions{
+		Target: core.ScriptTargetESNext,
+		Module: core.ModuleKindESNext,
+		Strict: core.TSTrue,
+	}
 
-func createProgram(parsedConfig *tsoptions.ParsedCommandLine, cwd string) (*compiler.Program, error) {
+	compareOpts := tspath.ComparePathsOptions{
+		CurrentDirectory:          cwd,
+		UseCaseSensitiveFileNames: false,
+	}
+
+	parsedConfig := tsoptions.NewParsedCommandLine(compilerOptions, fileNames, compareOpts)
+
 	fs := osvfs.FS()
 	host := compiler.NewCachedFSCompilerHost(
 		cwd,
 		fs,
 		"",
-		tsoptions.NewExtendedConfigCache(),
-		func(msg *diagnostics.Message, args ...any) {},
+		nil,
+		nil,
 	)
 
 	opts := compiler.ProgramOptions{
@@ -320,23 +283,4 @@ func createProgram(parsedConfig *tsoptions.ParsedCommandLine, cwd string) (*comp
 	}
 
 	return compiler.NewProgram(opts), nil
-}
-
-func parseCommandLine(args []string) (files []string, options map[string]string) {
-	options = make(map[string]string)
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") {
-			key := strings.TrimLeft(arg, "-")
-			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
-				options[key] = args[i+1]
-				i++
-			} else {
-				options[key] = "true"
-			}
-		} else {
-			files = append(files, arg)
-		}
-	}
-	return
 }
