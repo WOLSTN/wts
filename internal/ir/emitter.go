@@ -1006,7 +1006,7 @@ func (be *bodyEmitter) emitStatement(stmt *ast.Node) {
 	case ast.KindTryStatement:
 		be.emitExpression(stmt)
 	case ast.KindThrowStatement:
-		be.emitExpression(stmt)
+		be.emitThrowStatement(stmt)
 	case ast.KindDebuggerStatement:
 		// nothing
 	default:
@@ -1060,6 +1060,16 @@ func (be *bodyEmitter) emitExpressionStatement(stmt *ast.Node) {
 	expr := stmt.Expression()
 	if expr != nil {
 		be.emitExpression(expr)
+	}
+}
+
+func (be *bodyEmitter) emitThrowStatement(stmt *ast.Node) {
+	expr := stmt.Expression()
+	if expr != nil {
+		valId := be.emitExpression(expr)
+		be.addInstr("throw", be.e.getNodeType(stmt), nil, []string{valId})
+	} else {
+		be.addInstr("throw", "", nil, nil)
 	}
 }
 

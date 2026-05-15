@@ -40,12 +40,15 @@ foreach ($func in $json.functions) {
                 $exprs += "$($block.label)::$($instr.id) value=$($instr.value)"
             }
 
-            if ($instr.opcode -eq "binary" -and $instr.value -match "EqualsToken|EqualsEquals") {
-                # Skip ==, ===, !=, !==
-                if ($instr.value -notmatch "EqualsEqualsToken|ExclamationEquals") {
-                    $badBinaryCount++
-                    $badBinaries += "$($block.label)::$($instr.id) op=$($instr.value)"
-                }
+            if ($instr.opcode -eq "binary" -and (
+                $instr.value -eq "KindEqualsToken" -or
+                $instr.value -eq "KindPlusEqualsToken" -or
+                $instr.value -eq "KindMinusEqualsToken" -or
+                $instr.value -eq "KindAsteriskEqualsToken" -or
+                $instr.value -eq "KindSlashEqualsToken"
+            )) {
+                $badBinaryCount++
+                $badBinaries += "$($block.label)::$($instr.id) op=$($instr.value)"
             }
         }
     }
