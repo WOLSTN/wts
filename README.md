@@ -26,6 +26,50 @@ Unlike Deno and Bun, which transpile TypeScript to JavaScript for execution in a
 
 WTS provides this type information through its IR output, which is a complete lossless representation of the typed program.
 
+### Why not just use `tsgo --api`?
+
+This is the most common question. tsgo has an `--api` flag that encodes the AST into a binary format. Why write a whole new frontend instead of just using that?
+
+**Because `tsgo --api` outputs syntax, not semantics.**
+
+| What you get | `tsgo --api` | WTS `emit-ir` |
+|---|---|---|
+| AST nodes | ✅ Full tree | ✅ Full tree |
+| Source positions | ✅ Exact | ✅ Exact |
+| String table | ✅ Deduplicated | ✅ Inline |
+| **Type information** | ❌ **Not included** | ✅ **Full type system** |
+| **Symbol table** | ❌ **Not included** | ✅ **All flags, parents, members** |
+| **Function signatures** | ❌ **Not included** | ✅ **Parameters, returns, generics** |
+| **Class/Interface structure** | ❌ Raw AST nodes only | ✅ **Properties, methods, modifiers** |
+| **Import/Export semantics** | ❌ Raw AST nodes only | ✅ **Semantic records** |
+| **Enum values** | ❌ Raw AST nodes only | ✅ **Resolved member values** |
+| **Generic instantiations** | ❌ Not included | ✅ **All type arguments** |
+
+To understand the gap concretely: feeding `tsgo --api` output to a backend would mean the backend must **reimplement a full TypeScript type checker** just to figure out what type each expression has. That's thousands of lines of type inference logic, relational algorithms, and constraint solving — exactly what tsgo's checker already does.
+
+**WTS does the type checking once, in the frontend, and serializes the results.** The backend gets types for free.
+
+#### "But you could just link tsgo as a library"
+
+tsgo is **not designed to be used as a library for type data access**:
+
+- All checker fields (type maps, symbol tables, link stores) are **unexported** — there are no getters for most of them
+- The checker is designed to be a black box: parse → check → emit JS, with type information discarded after emission
+- Exposing all type data would require adding hundreds of exported methods to tsgo's checker — which is the same amount of work as writing WTS's `CollectAllCheckerData`
+
+WTS takes a different approach: it uses **Go reflection** to collect all checker data exhaustively in a single pass ([`CollectAllCheckerData`](internal/checker/allmaps.go)), then processes it into a clean, backend-friendly IR. No need to modify tsgo's checker internals.
+
+#### "But you're forked from tsgo, maintenance burden!"
+
+Yes, WTS is forked. But the fork is **shallow and stable**:
+
+- WTS only uses **frontend components** from tsgo: parser, binder, checker
+- These components are **stable** — the TypeScript grammar and type system don't change often
+- The IR emitter (`internal/ir/`) is **new code** written by WTS, not modified tsgo code
+- When upstream fixes a parser bug or adds a syntax feature, cherry-picking is straightforward because the AST and checker APIs are shared
+
+The alternative — writing a TypeScript frontend from scratch or wrapping tsgo as a library — would be **far more work** with no meaningful benefit.
+
 ## Installation
 
 ```bash
