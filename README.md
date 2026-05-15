@@ -1,19 +1,21 @@
 # WTS - TypeScript Frontend for Wolstn
 
-**WTS** (Wolstn TypeScript) is a TypeScript frontend for the [Wolstn](https://github.com/WOLSTN) native compiler. It parses TypeScript code, performs full type checking, and emits a comprehensive typed IR (Intermediate Representation) that preserves all type information for native code generation.
+**WTS** (Wolstn TypeScript) is a TypeScript frontend for the [Wolstn](https://github.com/WOLSTN) native compiler. It parses TypeScript code, performs full type checking, and emits a comprehensive typed IR (`.wir`) that preserves all type information for native code generation.
 
 ## Overview
 
 WTS is forked from [Microsoft's TypeScript-go](https://github.com/microsoft/TypeScript-go) (tsgo), but adapted to serve as a frontend for native compilation rather than JavaScript emission.
 
 > **WTS is not Wolstn itself. WTS only produces `.wir` IR files — it does not compile to native executables.**
-> To compile TypeScript to a native binary, feed the `.wir` output to **[WolstnC](https://github.com/WOLSTN/WolstnC)** (the Wolstn compiler backend).
+> To compile TypeScript to a native binary, feed the `.wir` output to **[WolstnC](https://github.com/WOLSTN/wolstnC)** (the Wolstn compiler backend).
 
 | | tsgo | WTS |
 |---|---|---|
 | **Purpose** | TypeScript → JavaScript | TypeScript → Wolstn IR |
 | **Output** | JavaScript code | Typed IR (JSON) |
 | **Type info** | Used for checking only | **Preserved for codegen** |
+| **AST** | Only in encoder binary format | **Full tree in IR** |
+| **Control flow** | Not exposed | **CFG with basic blocks** |
 | **Runtime** | V8, Node.js, browsers | Native via WolstnC |
 
 ## Why WTS?
@@ -34,13 +36,15 @@ This is the most common question. tsgo has an `--api` flag that encodes the AST 
 
 | What you get | `tsgo --api` | WTS `emit-ir` |
 |---|---|---|
-| AST nodes | ✅ Full tree | ✅ Full tree |
+| AST nodes | ✅ Full tree | ✅ Full tree with types |
 | Source positions | ✅ Exact | ✅ Exact |
 | String table | ✅ Deduplicated | ✅ Inline |
 | **Type information** | ❌ **Not included** | ✅ **Full type system** |
 | **Symbol table** | ❌ **Not included** | ✅ **All flags, parents, members** |
 | **Function signatures** | ❌ **Not included** | ✅ **Parameters, returns, generics** |
 | **Class/Interface structure** | ❌ Raw AST nodes only | ✅ **Properties, methods, modifiers** |
+| **Function bodies** | ❌ AST only | ✅ **CFG with basic blocks + instructions** |
+| **Expression types** | ❌ Not included | ✅ **Every AST node has a type** |
 | **Import/Export semantics** | ❌ Raw AST nodes only | ✅ **Semantic records** |
 | **Enum values** | ❌ Raw AST nodes only | ✅ **Resolved member values** |
 | **Generic instantiations** | ❌ Not included | ✅ **All type arguments** |
@@ -92,7 +96,7 @@ wts emit-ir main.ts -o program.wir
 wts emit-ir -p tsconfig.json -o program.wir
 ```
 
-The output `.wir` file is a JSON-formatted IR containing all typed program information.
+The output `.wir` file is a JSON-formatted IR containing the full typed program: type system, AST with expression-level types, symbol table, and function bodies with a control flow graph.
 
 #### IR Options
 
@@ -116,7 +120,13 @@ The IR is a versioned, self-contained representation of the typed program:
 ```json
 {
   "version": 1,
-  "files": [{ "path": "main.ts", "source": "..." }],
+  "files": [
+    {
+      "path": "main.ts",
+      "source": "...",
+      "nodes": [{ "kind": "KindFunctionDeclaration", "pos": 0, "end": 50, "type": "t1", "children": [...] }]
+    }
+  ],
   "types": [{ "id": "t1", "kind": "object", "flags": 1048576, "properties": [...] }],
   "symbols": [{ "id": "s1", "name": "foo", "flags": 16, "kind": "function", "type": "t1" }],
   "signatures": [{ "id": "sig1", "kind": "call", "parameters": [...], "returnType": "t2" }],
@@ -126,7 +136,25 @@ The IR is a versioned, self-contained representation of the typed program:
   "enums": [{ "name": "Direction", "symbol": "s4", "members": [...], "isConst": false }],
   "typeAliases": [{ "name": "Point", "symbol": "s5", "target": "t10", "typeParams": [...] }],
   "namespaces": [{ "name": "MyNamespace", "symbol": "s6", "members": [...] }],
-  "functions": [{ "name": "foo", "symbol": "s1", "parameters": [...], "returnType": "t2", "isAsync": false, "isGenerator": false }],
+  "functions": [{
+    "name": "foo",
+    "symbol": "s1",
+    "parameters": [...],
+    "returnType": "t2",
+    "isAsync": false,
+    "body": {
+      "blocks": [{
+        "id": 1,
+        "label": "entry",
+        "preds": [],
+        "succs": [2],
+        "instrs": [
+          { "id": "i1", "opcode": "literal", "type": "t3", "value": 42 },
+          { "id": "i2", "opcode": "ret", "type": "t1", "operands": ["i1"] }
+        ]
+      }]
+    }
+  }],
   "variables": [{ "name": "x", "symbol": "s7", "type": "t3", "isConst": true }],
   "imports": [{ "kind": "named", "modulePath": "fs", "symbol": "s8", "specifiers": [...] }],
   "exports": [{ "kind": "default", "name": "foo", "symbol": "s1", "isDefault": true }]
@@ -146,11 +174,60 @@ The IR is a versioned, self-contained representation of the typed program:
 | `enums` | Enum declarations with members and values |
 | `typeAliases` | Type alias declarations with target type and type parameters |
 | `namespaces` | Namespace/module declarations with exported members |
-| `functions` | Top-level function declarations with parameters, generics, async/generator flags |
+| `functions` | Top-level function declarations with parameters, generics, async/generator flags, and CFG body |
 | `variables` | Top-level variable declarations with types and const-ness |
 | `imports` | Import declarations from external modules |
 | `exports` | Export declarations including named, default, and re-exports |
-| `files` | Source file paths and raw source text |
+| `files` | Source file paths, raw source text, and **full AST tree** |
+
+### Function Body IR
+
+Every function with a body exports a control flow graph of basic blocks:
+
+```
+Function
+  └── body (FuncBody)
+        └── blocks[] (BasicBlock)
+              ├── id        — block identifier
+              ├── label     — human-readable label (entry, if.then, while.cond, etc.)
+              ├── preds[]   — predecessor block IDs
+              ├── succs[]   — successor block IDs
+              └── instrs[]  — instructions in SSA-like form
+                    ├── id       — instruction identifier (i1, i2, ...)
+                    ├── opcode   — operation (literal, ident, binary, store, ret, call, etc.)
+                    ├── type     — result type ID
+                    ├── operands — operand instruction IDs
+                    └── value    — literal value (if applicable)
+```
+
+#### Supported Opcodes
+
+| Opcode | Description | Opcode | Description |
+|---|---|---|---|
+| `literal` | Constant value | `ident` | Variable reference |
+| `binary` | Binary operation | `unary` | Unary operation |
+| `store` | Assignment | `alloc` | Variable allocation |
+| `call` | Function call | `new` | Constructor call |
+| `prop` | Property access | `elem` | Indexed access |
+| `ret` | Return | `jmp` | Unconditional jump |
+| `br` | Conditional branch | `inc` | Increment (++i / i++) |
+| `dec` | Decrement (--i / i--) | `template` | Template string |
+| `array` | Array literal | `object` | Object literal |
+| `select` | Ternary expression | `func` | Function expression |
+| `await` | Await expression | `yield` | Generator yield |
+| `cast` | Type assertion | `typeof` | Typeof expression |
+| `throw` | Throw statement | `compound` | Compound assignment (+=, -=) |
+| `break` | Break statement | `continue` | Continue statement |
+| `case` | Switch case start | `this` | This keyword |
+| `super` | Super keyword | `spread` | Spread element |
+
+### AST Tree in Files
+
+Each file entry includes the complete AST tree as nested `nodes`, with type information on every node:
+
+- Every AST node has a `type` field pointing to the type system
+- Nodes that resolve to a symbol carry a `symbol` reference
+- The tree structure mirrors the TypeScript AST (statements → expressions → literals)
 
 ### Modifier Flags
 
@@ -195,6 +272,12 @@ Source Code (.ts, .tsx)
 Typed AST + Full Type System
       ↓
  IR Emitter (ir/)
+      │
+      ├── type system    → types[], symbols[], signatures[]
+      ├── declarations   → classes[], interfaces[], enums[], functions[], variables[]
+      ├── AST tree       → files[].nodes[] (every node has a type)
+      └── CFG bodies     → functions[].body.blocks[] (basic blocks + instructions)
+      │
       ↓
 Wolstn IR (.wir JSON)
 ```

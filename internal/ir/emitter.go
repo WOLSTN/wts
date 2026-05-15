@@ -270,6 +270,7 @@ type Emitter struct {
 	typeMap     map[*checker.Type]string
 	symbolMap   map[*ast.Symbol]string
 	sigMap      map[*checker.Signature]string
+	symTypeCache map[*ast.Symbol]string
 	typeIdGen   int
 	symbolIdGen int
 	sigIdGen    int
@@ -278,12 +279,13 @@ type Emitter struct {
 
 func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
 	return &Emitter{
-		program:   program,
-		irProgram: &Program{Version: Version},
-		typeMap:   make(map[*checker.Type]string),
-		symbolMap: make(map[*ast.Symbol]string),
-		sigMap:    make(map[*checker.Signature]string),
-		options:   opts,
+		program:     program,
+		irProgram:   &Program{Version: Version},
+		typeMap:     make(map[*checker.Type]string),
+		symbolMap:   make(map[*ast.Symbol]string),
+		sigMap:      make(map[*checker.Signature]string),
+		symTypeCache: make(map[*ast.Symbol]string),
+		options:     opts,
 	}
 }
 
@@ -295,15 +297,6 @@ func (e *Emitter) Emit() (*Program, error) {
 
 	e.checkerData = checker.CollectAllCheckerData(e.checker)
 
-	e.emitAllTypes(e.checkerData.TypeMaps)
-	for i := range e.checkerData.SymbolArena {
-		sym := &e.checkerData.SymbolArena[i]
-		e.getOrCreateSymbolId(sym)
-	}
-	for i := range e.checkerData.SignatureArena {
-		sig := &e.checkerData.SignatureArena[i]
-		e.getOrCreateSignatureId(sig)
-	}
 	if e.checkerData.Globals != nil {
 		for name, sym := range e.checkerData.Globals {
 			e.irProgram.Globals = append(e.irProgram.Globals, &Global{
@@ -358,91 +351,6 @@ func (e *Emitter) pruneTypes() {
 		}
 	}
 	e.irProgram.Types = filtered
-}
-
-func (e *Emitter) emitAllTypes(typeMaps map[string]any) {
-	for name, m := range typeMaps {
-		e.emitTypeMap(name, m)
-	}
-}
-
-func (e *Emitter) emitTypeMap(kind string, m any) {
-	switch v := m.(type) {
-	case map[string]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[jsnum.Number]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[jsnum.PseudoBigInt]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.EnumLiteralKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.CacheHashKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.StringMappingKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.CachedTypeKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.NarrowedTypeKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.InstantiationExpressionKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.SubstitutionTypeKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.UnionOfUnionKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.PropertiesTypesKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.AssignmentReducedKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.ReverseMappedTypeKey]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[*ast.Symbol]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[*ast.Node]*checker.Type:
-		for _, t := range v {
-			e.getOrCreateTypeId(t)
-		}
-	case map[checker.CachedSignatureKey]*checker.Signature:
-		for _, s := range v {
-			e.getOrCreateSignatureId(s)
-		}
-	case map[checker.CacheHashKey][]*checker.Type:
-		for _, types := range v {
-			for _, t := range types {
-				e.getOrCreateTypeId(t)
-			}
-		}
-	}
 }
 
 func (e *Emitter) emitSourceFiles() {
@@ -1659,14 +1567,17 @@ func (e *Emitter) emitObjectType(t *checker.Type, irType *Type) {
 
 	if props := e.checker.GetPropertiesOfType(t); len(props) > 0 {
 		for _, prop := range props {
-			propType := e.checker.GetTypeOfSymbol(prop)
 			irProp := &Property{
 				Name:       prop.Name,
 				Symbol:     e.getOrCreateSymbolId(prop),
 				IsOptional: prop.Flags&ast.SymbolFlagsOptional != 0,
 			}
-			if propType != nil {
-				irProp.Type = e.getOrCreateTypeId(propType)
+			if cachedType, ok := e.symTypeCache[prop]; ok {
+				irProp.Type = cachedType
+			} else if propType := e.checker.GetTypeOfSymbol(prop); propType != nil {
+				propTypeId := e.getOrCreateTypeId(propType)
+				e.symTypeCache[prop] = propTypeId
+				irProp.Type = propTypeId
 			}
 			irType.Properties = append(irType.Properties, irProp)
 		}
@@ -1761,12 +1672,6 @@ func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
 		Kind:       e.symbolKindToString(sym),
 	}
 
-	if e.checker != nil {
-		if t := e.checker.GetTypeOfSymbol(sym); t != nil {
-			irSym.Type = e.getOrCreateTypeId(t)
-		}
-	}
-
 	if len(sym.Declarations) > 0 {
 		for _, decl := range sym.Declarations {
 			irSym.Declarations = append(irSym.Declarations, fmt.Sprintf("%d:%d", decl.Pos(), decl.End()))
@@ -1813,8 +1718,12 @@ func (e *Emitter) getOrCreateSignatureId(sig *checker.Signature) string {
 
 	for _, param := range sig.Parameters() {
 		p := Param{Name: param.Name}
-		if t := e.checker.GetTypeOfSymbol(param); t != nil {
-			p.Type = e.getOrCreateTypeId(t)
+		if cachedType, ok := e.symTypeCache[param]; ok {
+			p.Type = cachedType
+		} else if t := e.checker.GetTypeOfSymbol(param); t != nil {
+			typeId := e.getOrCreateTypeId(t)
+			e.symTypeCache[param] = typeId
+			p.Type = typeId
 		}
 		irSig.Parameters = append(irSig.Parameters, p)
 	}

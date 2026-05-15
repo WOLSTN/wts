@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/wolstn/wts/internal/ast"
+	"github.com/wolstn/wts/internal/bundled"
 	"github.com/wolstn/wts/internal/compiler"
 	"github.com/wolstn/wts/internal/core"
 	"github.com/wolstn/wts/internal/diagnosticwriter"
@@ -318,8 +319,8 @@ func createProgramFromArgs(project string, files []string, cwd string) (*compile
 	fs := osvfs.FS()
 	host := compiler.NewCachedFSCompilerHost(
 		cwd,
-		fs,
-		"",
+		bundled.WrapFS(fs),
+		bundled.LibPath(),
 		nil,
 		nil,
 	)
