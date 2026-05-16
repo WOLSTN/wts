@@ -262,30 +262,35 @@ type EmitOptions struct {
 	NoSource bool // Omit source text from File entries
 }
 
+type typeState struct {
+	id        string
+	resolving bool
+}
+
 type Emitter struct {
-	program     *compiler.Program
-	checker     *checker.Checker
-	checkerData *checker.CheckerData
-	irProgram   *Program
-	typeMap     map[*checker.Type]string
-	symbolMap   map[*ast.Symbol]string
-	sigMap      map[*checker.Signature]string
+	program      *compiler.Program
+	checker      *checker.Checker
+	checkerData  *checker.CheckerData
+	irProgram    *Program
+	typeState    map[any]*typeState
+	sigState     map[*checker.Signature]*typeState
+	symbolMap    map[*ast.Symbol]string
 	symTypeCache map[*ast.Symbol]string
-	typeIdGen   int
-	symbolIdGen int
-	sigIdGen    int
-	options     EmitOptions
+	typeIdGen    int
+	symbolIdGen  int
+	sigIdGen     int
+	options      EmitOptions
 }
 
 func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
 	return &Emitter{
-		program:     program,
-		irProgram:   &Program{Version: Version},
-		typeMap:     make(map[*checker.Type]string),
-		symbolMap:   make(map[*ast.Symbol]string),
-		sigMap:      make(map[*checker.Signature]string),
+		program:      program,
+		irProgram:    &Program{Version: Version},
+		typeState:    make(map[any]*typeState),
+		sigState:     make(map[*checker.Signature]*typeState),
+		symbolMap:    make(map[*ast.Symbol]string),
 		symTypeCache: make(map[*ast.Symbol]string),
-		options:     opts,
+		options:      opts,
 	}
 }
 
@@ -1432,13 +1437,17 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 		return ""
 	}
 
-	if id, ok := e.typeMap[t]; ok {
-		return id
+	identity := checker.GetRecursionIdentity(t)
+
+	if state, ok := e.typeState[identity]; ok {
+		return state.id
 	}
 
 	e.typeIdGen++
 	id := fmt.Sprintf("t%d", e.typeIdGen)
-	e.typeMap[t] = id
+
+	state := &typeState{id: id, resolving: true}
+	e.typeState[identity] = state
 
 	irType := &Type{
 		Id:      id,
@@ -1519,6 +1528,7 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 	}
 
 	e.irProgram.Types = append(e.irProgram.Types, irType)
+	state.resolving = false
 	return id
 }
 
@@ -1702,13 +1712,16 @@ func (e *Emitter) getOrCreateSignatureId(sig *checker.Signature) string {
 	if sig == nil {
 		return ""
 	}
-	if id, ok := e.sigMap[sig]; ok {
-		return id
+
+	if state, ok := e.sigState[sig]; ok {
+		return state.id
 	}
 
 	e.sigIdGen++
 	id := fmt.Sprintf("sig%d", e.sigIdGen)
-	e.sigMap[sig] = id
+
+	state := &typeState{id: id, resolving: true}
+	e.sigState[sig] = state
 
 	irSig := &Signature{
 		Id:      id,
@@ -1741,6 +1754,7 @@ func (e *Emitter) getOrCreateSignatureId(sig *checker.Signature) string {
 	}
 
 	e.irProgram.Signatures = append(e.irProgram.Signatures, irSig)
+	state.resolving = false
 	return id
 }
 

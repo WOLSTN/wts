@@ -73,3 +73,7 @@ func (c *Checker) GetResolvedSymbolOfNode(node *ast.Node) *ast.Symbol {
 func (c *Checker) GetTypeOfNode(node *ast.Node) *Type {
 	return c.getTypeOfNode(node)
 }
+
+func GetRecursionIdentity(t *Type) any {
+	return getRecursionIdentity(t).value
+}
