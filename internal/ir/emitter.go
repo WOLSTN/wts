@@ -672,21 +672,14 @@ func (e *Emitter) emitConstructorFromNode(ctorNode *ast.Node, classSym *ast.Symb
 		}
 	}
 
-	ctorSym := ctorNode.Symbol()
-	if ctorSym != nil {
-		dt := e.checker.GetDeclaredTypeOfSymbol(classSym)
-		if dt != nil {
-			sigs := e.checker.GetConstructSignatures(dt)
-			if len(sigs) > 0 {
-				sig := sigs[0]
-				method.Signature = e.getOrCreateSignatureId(sig)
-				if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
-					method.ReturnType = e.getOrCreateTypeId(ret)
-				}
-				for _, tp := range sig.TypeParameters() {
-					method.TypeParams = append(method.TypeParams, e.getOrCreateTypeId(tp))
-				}
-			}
+	sig := e.checker.GetSignatureFromDeclaration(ctorNode)
+	if sig != nil {
+		method.Signature = e.getOrCreateSignatureId(sig)
+		if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
+			method.ReturnType = e.getOrCreateTypeId(ret)
+		}
+		for _, tp := range sig.TypeParameters() {
+			method.TypeParams = append(method.TypeParams, e.getOrCreateTypeId(tp))
 		}
 	}
 }
