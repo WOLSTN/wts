@@ -160,6 +160,8 @@ type Method struct {
 	IsPrivate    bool    `json:"isPrivate,omitempty"`
 	IsProtected  bool    `json:"isProtected,omitempty"`
 	IsOptional   bool    `json:"isOptional,omitempty"`
+	IsAsync      bool    `json:"isAsync,omitempty"`
+	IsGenerator  bool    `json:"isGenerator,omitempty"`
 	Signature    string  `json:"signature,omitempty"`
 }
 
@@ -268,29 +270,31 @@ type typeState struct {
 }
 
 type Emitter struct {
-	program      *compiler.Program
-	checker      *checker.Checker
-	checkerData  *checker.CheckerData
-	irProgram    *Program
-	typeState    map[any]*typeState
-	sigState     map[*checker.Signature]*typeState
-	symbolMap    map[*ast.Symbol]string
-	symTypeCache map[*ast.Symbol]string
-	typeIdGen    int
-	symbolIdGen  int
-	sigIdGen     int
-	options      EmitOptions
+	program       *compiler.Program
+	checker       *checker.Checker
+	checkerData   *checker.CheckerData
+	irProgram     *Program
+	typeState     map[any]*typeState
+	sigState      map[*checker.Signature]*typeState
+	symbolMap     map[*ast.Symbol]string
+	symTypeCache  map[*ast.Symbol]string
+	emittedSyms   map[*ast.Symbol]bool
+	typeIdGen     int
+	symbolIdGen   int
+	sigIdGen      int
+	options       EmitOptions
 }
 
 func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
 	return &Emitter{
-		program:      program,
-		irProgram:    &Program{Version: Version},
-		typeState:    make(map[any]*typeState),
-		sigState:     make(map[*checker.Signature]*typeState),
-		symbolMap:    make(map[*ast.Symbol]string),
+		program:     program,
+		irProgram:   &Program{Version: Version},
+		typeState:   make(map[any]*typeState),
+		sigState:    make(map[*checker.Signature]*typeState),
+		symbolMap:   make(map[*ast.Symbol]string),
 		symTypeCache: make(map[*ast.Symbol]string),
-		options:      opts,
+		emittedSyms: make(map[*ast.Symbol]bool),
+		options:     opts,
 	}
 }
 
@@ -371,9 +375,14 @@ func (e *Emitter) emitSourceFiles() {
 		file.Nodes = e.emitNodeTree(sf)
 		e.emitFileImports(sf)
 		e.emitFileExports(sf)
+		e.emitFileDeclarations(sf)
 	}
 
 	for _, sym := range e.checkerData.Globals {
+		if e.emittedSyms[sym] {
+			continue
+		}
+		e.emittedSyms[sym] = true
 		flags := sym.Flags
 
 		switch {
@@ -511,6 +520,60 @@ func (e *Emitter) emitFileExports(sf *ast.SourceFile) {
 	}
 }
 
+func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
+	for _, stmt := range sf.Statements.Nodes {
+		if stmt.Kind == ast.KindVariableStatement {
+			e.emitVariableStatementDeclarations(stmt)
+			continue
+		}
+		sym := stmt.Symbol()
+		if sym == nil {
+			continue
+		}
+		if e.emittedSyms[sym] {
+			continue
+		}
+		e.emittedSyms[sym] = true
+		flags := sym.Flags
+		switch {
+		case flags&ast.SymbolFlagsTypeAlias != 0:
+			e.emitTypeAliasFromSymbol(sym, sym.Name)
+		case flags&ast.SymbolFlagsClass != 0:
+			e.emitClassFromSymbol(sym)
+		case flags&ast.SymbolFlagsInterface != 0:
+			e.emitInterfaceFromSymbol(sym)
+		case flags&ast.SymbolFlagsEnum != 0:
+			e.emitEnumFromSymbol(sym)
+		case flags&ast.SymbolFlagsFunction != 0:
+			e.emitFunctionFromSymbol(sym)
+		case flags&ast.SymbolFlagsVariable != 0:
+			e.emitVariableFromSymbol(sym)
+		case flags&ast.SymbolFlagsModule != 0:
+			if sym.Name != "globalThis" {
+				e.emitNamespaceFromSymbol(sym)
+			}
+		}
+	}
+}
+
+func (e *Emitter) emitVariableStatementDeclarations(stmt *ast.Node) {
+	stmt.ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == ast.KindVariableDeclarationList {
+			child.ForEachChild(func(decl *ast.Node) bool {
+				if decl.Kind == ast.KindVariableDeclaration {
+					sym := decl.Symbol()
+					if sym != nil && !e.emittedSyms[sym] {
+						e.emittedSyms[sym] = true
+						e.emitVariableFromSymbol(sym)
+					}
+				}
+				return false
+			})
+		}
+		return false
+	})
+}
+
 func (e *Emitter) emitClassFromSymbol(sym *ast.Symbol) {
 	irClass := &Class{
 		Name:   sym.Name,
@@ -539,6 +602,29 @@ func (e *Emitter) emitClassFromSymbol(sym *ast.Symbol) {
 		for _, prop := range props {
 			e.emitClassProperty(prop, irClass)
 		}
+
+		if irClass.Constructor == nil {
+			irClass.Constructor = e.emitConstructor(sym, declaredType)
+		}
+
+		implSet := make(map[string]bool)
+		for _, id := range irClass.Implements {
+			implSet[id] = true
+		}
+		for _, decl := range sym.Declarations {
+			if decl.Kind == ast.KindClassDeclaration {
+				for _, impl := range ast.GetImplementsHeritageClauseElements(decl) {
+					implType := e.checker.GetTypeFromTypeNode(impl.AsNode())
+					if implType != nil && implType.Symbol() != nil {
+						id := e.getOrCreateSymbolId(implType.Symbol())
+						if !implSet[id] {
+							implSet[id] = true
+							irClass.Implements = append(irClass.Implements, id)
+						}
+					}
+				}
+			}
+		}
 	}
 
 	if sym.Flags&ast.SymbolFlagsClass != 0 {
@@ -557,6 +643,82 @@ func (e *Emitter) emitClassFromSymbol(sym *ast.Symbol) {
 	}
 
 	e.irProgram.Classes = append(e.irProgram.Classes, irClass)
+}
+
+func (e *Emitter) emitConstructorFromNode(ctorNode *ast.Node, classSym *ast.Symbol, method *Method) {
+	if sym := ctorNode.Symbol(); sym != nil {
+		method.Symbol = e.getOrCreateSymbolId(sym)
+	}
+
+	ctorDecl := ctorNode.AsConstructorDeclaration()
+	if ctorDecl == nil {
+		return
+	}
+
+	for _, param := range ctorDecl.Parameters.Nodes {
+		if param.Kind == ast.KindParameter {
+			pDecl := param.AsParameterDeclaration()
+			if pDecl == nil {
+				continue
+			}
+			p := Param{Name: pDecl.Name().Text()}
+			if pDecl.Type != nil {
+				t := e.checker.GetTypeFromTypeNode(pDecl.Type)
+				if t != nil {
+					p.Type = e.getOrCreateTypeId(t)
+				}
+			}
+			method.Parameters = append(method.Parameters, p)
+		}
+	}
+
+	ctorSym := ctorNode.Symbol()
+	if ctorSym != nil {
+		dt := e.checker.GetDeclaredTypeOfSymbol(classSym)
+		if dt != nil {
+			sigs := e.checker.GetConstructSignatures(dt)
+			if len(sigs) > 0 {
+				sig := sigs[0]
+				method.Signature = e.getOrCreateSignatureId(sig)
+				if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
+					method.ReturnType = e.getOrCreateTypeId(ret)
+				}
+				for _, tp := range sig.TypeParameters() {
+					method.TypeParams = append(method.TypeParams, e.getOrCreateTypeId(tp))
+				}
+			}
+		}
+	}
+}
+
+func (e *Emitter) emitConstructor(classSym *ast.Symbol, declaredType *checker.Type) *Method {
+	method := &Method{
+		Name: "constructor",
+	}
+
+	for _, decl := range classSym.Declarations {
+		if decl.Kind != ast.KindClassDeclaration {
+			continue
+		}
+		classDecl := decl.AsClassDeclaration()
+		if mods := classDecl.Modifiers(); mods != nil {
+			for _, mod := range mods.Nodes {
+				if mod.Kind == ast.KindAbstractKeyword {
+					method.IsAbstract = true
+				}
+			}
+		}
+		if classDecl.Members != nil && classDecl.Members.Nodes != nil {
+			for _, member := range classDecl.Members.Nodes {
+				if member.Kind == ast.KindConstructor {
+					e.emitConstructorFromNode(member, classSym, method)
+					break
+				}
+			}
+		}
+	}
+
+	return method
 }
 
 func (e *Emitter) emitClassProperty(prop *ast.Symbol, irClass *Class) {
@@ -597,23 +759,36 @@ func (e *Emitter) emitMethod(sym *ast.Symbol) *Method {
 		method.IsAbstract = ast.HasSyntacticModifier(decl, ast.ModifierFlagsAbstract)
 		method.IsPrivate = ast.HasSyntacticModifier(decl, ast.ModifierFlagsPrivate)
 		method.IsProtected = ast.HasSyntacticModifier(decl, ast.ModifierFlagsProtected)
+		method.IsAsync = ast.HasSyntacticModifier(decl, ast.ModifierFlagsAsync)
+		if decl.Kind == ast.KindMethodDeclaration {
+			method.IsGenerator = decl.AsMethodDeclaration().AsteriskToken != nil
+		}
 	}
 
-	sig := e.checker.GetResolvedSignature(sym.Declarations[0])
-	if sig != nil {
-		method.Signature = e.getOrCreateSignatureId(sig)
-		for _, param := range sig.Parameters() {
-			p := Param{Name: param.Name}
-			if t := e.checker.GetTypeOfSymbol(param); t != nil {
-				p.Type = e.getOrCreateTypeId(t)
+	if len(sym.Declarations) > 0 {
+		decl := sym.Declarations[0]
+		if decl.Kind == ast.KindMethodDeclaration || decl.Kind == ast.KindGetAccessor || decl.Kind == ast.KindSetAccessor || decl.Kind == ast.KindConstructor {
+			funcType := e.checker.GetTypeOfSymbol(sym)
+			if funcType != nil {
+				sigs := e.checker.GetCallSignatures(funcType)
+				if len(sigs) > 0 {
+					sig := sigs[0]
+					method.Signature = e.getOrCreateSignatureId(sig)
+					for _, param := range sig.Parameters() {
+						p := Param{Name: param.Name}
+						if t := e.checker.GetTypeOfSymbol(param); t != nil {
+							p.Type = e.getOrCreateTypeId(t)
+						}
+						method.Parameters = append(method.Parameters, p)
+					}
+					if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
+						method.ReturnType = e.getOrCreateTypeId(ret)
+					}
+					for _, tp := range sig.TypeParameters() {
+						method.TypeParams = append(method.TypeParams, e.getOrCreateTypeId(tp))
+					}
+				}
 			}
-			method.Parameters = append(method.Parameters, p)
-		}
-		if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
-			method.ReturnType = e.getOrCreateTypeId(ret)
-		}
-		for _, tp := range sig.TypeParameters() {
-			method.TypeParams = append(method.TypeParams, e.getOrCreateTypeId(tp))
 		}
 	}
 
@@ -773,27 +948,34 @@ func (e *Emitter) emitFunctionFromSymbol(sym *ast.Symbol) {
 
 	if len(sym.Declarations) > 0 {
 		decl := sym.Declarations[0]
-		flags := ast.GetFunctionFlags(decl)
-		fn.IsAsync = flags&ast.FunctionFlagsAsync != 0
-		fn.IsGenerator = flags&ast.FunctionFlagsGenerator != 0
 		fn.Body = e.emitFunctionBody(decl)
-	}
 
-	sig := e.checker.GetResolvedSignature(sym.Declarations[0])
-	if sig != nil {
-		fn.Signature = e.getOrCreateSignatureId(sig)
-		for _, param := range sig.Parameters() {
-			p := Param{Name: param.Name}
-			if t := e.checker.GetTypeOfSymbol(param); t != nil {
-				p.Type = e.getOrCreateTypeId(t)
+		if decl.Kind == ast.KindFunctionDeclaration || decl.Kind == ast.KindFunctionExpression {
+			if decl.Kind == ast.KindFunctionDeclaration {
+				fn.IsAsync = ast.HasSyntacticModifier(decl, ast.ModifierFlagsAsync)
+				fn.IsGenerator = decl.AsFunctionDeclaration().AsteriskToken != nil
 			}
-			fn.Parameters = append(fn.Parameters, p)
-		}
-		if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
-			fn.ReturnType = e.getOrCreateTypeId(ret)
-		}
-		for _, tp := range sig.TypeParameters() {
-			fn.TypeParams = append(fn.TypeParams, e.getOrCreateTypeId(tp))
+			funcType := e.checker.GetTypeOfSymbol(sym)
+			if funcType != nil {
+				sigs := e.checker.GetCallSignatures(funcType)
+				if len(sigs) > 0 {
+					sig := sigs[0]
+					fn.Signature = e.getOrCreateSignatureId(sig)
+					for _, param := range sig.Parameters() {
+						p := Param{Name: param.Name}
+						if t := e.checker.GetTypeOfSymbol(param); t != nil {
+							p.Type = e.getOrCreateTypeId(t)
+						}
+						fn.Parameters = append(fn.Parameters, p)
+					}
+					if ret := e.checker.GetReturnTypeOfSignature(sig); ret != nil {
+						fn.ReturnType = e.getOrCreateTypeId(ret)
+					}
+					for _, tp := range sig.TypeParameters() {
+						fn.TypeParams = append(fn.TypeParams, e.getOrCreateTypeId(tp))
+					}
+				}
+			}
 		}
 	}
 
