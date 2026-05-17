@@ -561,12 +561,17 @@ func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
 }
 
 func (e *Emitter) emitFunctionDeclaration(stmt *ast.Node) {
-	funcDecl := stmt.AsFunctionDeclaration()
-	name := funcDecl.Name()
-	if name == nil {
-		return
+	sym := stmt.Symbol()
+	if sym == nil {
+		sym = e.checker.GetSymbolAtLocation(stmt)
 	}
-	sym := name.AsNode().Symbol()
+	if sym == nil {
+		funcDecl := stmt.AsFunctionDeclaration()
+		name := funcDecl.Name()
+		if name != nil {
+			sym = e.checker.GetSymbolAtLocation(name)
+		}
+	}
 	if sym == nil {
 		return
 	}
