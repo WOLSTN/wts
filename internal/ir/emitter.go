@@ -558,6 +558,102 @@ func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
 			}
 		}
 	}
+
+	if sf.Locals != nil {
+		for _, sym := range sf.Locals {
+			if e.emittedSyms[sym] {
+				continue
+			}
+			e.emittedSyms[sym] = true
+			flags := sym.Flags
+			switch {
+			case flags&ast.SymbolFlagsFunction != 0:
+				e.emitFunctionFromSymbol(sym)
+			case flags&ast.SymbolFlagsVariable != 0:
+				e.emitVariableFromSymbol(sym)
+			case flags&ast.SymbolFlagsClass != 0:
+				e.emitClassFromSymbol(sym)
+			case flags&ast.SymbolFlagsInterface != 0:
+				e.emitInterfaceFromSymbol(sym)
+			case flags&ast.SymbolFlagsEnum != 0:
+				e.emitEnumFromSymbol(sym)
+			case flags&ast.SymbolFlagsTypeAlias != 0:
+				e.emitTypeAliasFromSymbol(sym, sym.Name)
+			}
+		}
+	}
+
+	if sf.Symbol != nil && sf.Symbol.Exports != nil {
+		for _, sym := range sf.Symbol.Exports {
+			if e.emittedSyms[sym] {
+				continue
+			}
+			e.emittedSyms[sym] = true
+			flags := sym.Flags
+			switch {
+			case flags&ast.SymbolFlagsFunction != 0:
+				e.emitFunctionFromSymbol(sym)
+			case flags&ast.SymbolFlagsVariable != 0:
+				e.emitVariableFromSymbol(sym)
+			case flags&ast.SymbolFlagsClass != 0:
+				e.emitClassFromSymbol(sym)
+			case flags&ast.SymbolFlagsInterface != 0:
+				e.emitInterfaceFromSymbol(sym)
+			case flags&ast.SymbolFlagsEnum != 0:
+				e.emitEnumFromSymbol(sym)
+			case flags&ast.SymbolFlagsTypeAlias != 0:
+				e.emitTypeAliasFromSymbol(sym, sym.Name)
+			}
+		}
+	}
+
+	for _, sym := range e.checkerData.Symbols {
+		if sym == nil {
+			continue
+		}
+		if e.emittedSyms[sym] {
+			continue
+		}
+		if len(sym.Declarations) == 0 {
+			continue
+		}
+		decl := sym.Declarations[0]
+		if decl == nil {
+			continue
+		}
+		sourceFile := ast.GetSourceFileOfNode(decl)
+		if sourceFile == nil {
+			if sf.Symbol != nil && sym.Parent == sf.Symbol {
+				sourceFile = sf
+			} else {
+				for _, d := range sym.Declarations {
+					if d != nil && d.Pos() >= 0 && d.End() <= len(string(sf.Text())) {
+						sourceFile = sf
+						break
+					}
+				}
+			}
+		}
+		if sourceFile != sf {
+			continue
+		}
+		e.emittedSyms[sym] = true
+		flags := sym.Flags
+		switch {
+		case flags&ast.SymbolFlagsFunction != 0:
+			e.emitFunctionFromSymbol(sym)
+		case flags&ast.SymbolFlagsVariable != 0:
+			e.emitVariableFromSymbol(sym)
+		case flags&ast.SymbolFlagsClass != 0:
+			e.emitClassFromSymbol(sym)
+		case flags&ast.SymbolFlagsInterface != 0:
+			e.emitInterfaceFromSymbol(sym)
+		case flags&ast.SymbolFlagsEnum != 0:
+			e.emitEnumFromSymbol(sym)
+		case flags&ast.SymbolFlagsTypeAlias != 0:
+			e.emitTypeAliasFromSymbol(sym, sym.Name)
+		}
+	}
 }
 
 func (e *Emitter) emitFunctionDeclaration(stmt *ast.Node) {
