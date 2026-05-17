@@ -526,10 +526,6 @@ func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
 			e.emitVariableStatementDeclarations(stmt)
 			continue
 		}
-		if stmt.Kind == ast.KindFunctionDeclaration {
-			e.emitFunctionDeclaration(stmt)
-			continue
-		}
 		sym := stmt.Symbol()
 		if sym == nil {
 			continue
