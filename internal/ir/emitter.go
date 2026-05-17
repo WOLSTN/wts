@@ -526,6 +526,10 @@ func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
 			e.emitVariableStatementDeclarations(stmt)
 			continue
 		}
+		if stmt.Kind == ast.KindFunctionDeclaration {
+			e.emitFunctionDeclaration(stmt)
+			continue
+		}
 		sym := stmt.Symbol()
 		if sym == nil {
 			continue
@@ -554,6 +558,23 @@ func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
 			}
 		}
 	}
+}
+
+func (e *Emitter) emitFunctionDeclaration(stmt *ast.Node) {
+	funcDecl := stmt.AsFunctionDeclaration()
+	name := funcDecl.Name()
+	if name == nil {
+		return
+	}
+	sym := name.AsNode().Symbol()
+	if sym == nil {
+		return
+	}
+	if e.emittedSyms[sym] {
+		return
+	}
+	e.emittedSyms[sym] = true
+	e.emitFunctionFromSymbol(sym)
 }
 
 func (e *Emitter) emitVariableStatementDeclarations(stmt *ast.Node) {
