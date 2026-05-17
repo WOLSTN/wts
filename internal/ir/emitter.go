@@ -528,6 +528,15 @@ func (e *Emitter) emitFileDeclarations(sf *ast.SourceFile) {
 		}
 		sym := stmt.Symbol()
 		if sym == nil {
+			sym = e.checker.GetSymbolAtLocation(stmt)
+		}
+		if sym == nil && stmt.Kind == ast.KindFunctionDeclaration {
+			funcDecl := stmt.AsFunctionDeclaration()
+			if name := funcDecl.Name(); name != nil {
+				sym = e.checker.GetSymbolAtLocation(name)
+			}
+		}
+		if sym == nil {
 			continue
 		}
 		if e.emittedSyms[sym] {
