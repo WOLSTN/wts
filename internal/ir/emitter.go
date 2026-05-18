@@ -259,10 +259,9 @@ type Variable struct {
 }
 
 type EmitOptions struct {
-	Prune     bool // Filter out internal noise types
-	Compact   bool // Compact JSON output (no indentation, omit empty arrays)
-	NoSource  bool // Omit source text from File entries
-	MainNoWtl bool // Use main as entry point, skip __wolstn_toplevel generation
+	Prune    bool // Filter out internal noise types
+	Compact  bool // Compact JSON output (no indentation, omit empty arrays)
+	NoSource bool // Omit source text from File entries
 }
 
 type typeState struct {
@@ -409,10 +408,6 @@ func (e *Emitter) emitSourceFiles() {
 }
 
 func (e *Emitter) emitTopLevelStatements(sf *ast.SourceFile) {
-	if e.options.MainNoWtl {
-		return
-	}
-
 	var topLevelStmts []*ast.Node
 	for _, stmt := range sf.Statements.Nodes {
 		switch stmt.Kind {
