@@ -155,9 +155,13 @@ If no files or project are specified, checks all .ts files in the current direct
 }
 
 type emitIRFlags struct {
-	project string
-	output  string
-	help    bool
+	project   string
+	output    string
+	help      bool
+	prune     bool
+	compact   bool
+	noSource  bool
+	treeShake bool
 }
 
 func runEmitIR(args []string) int {
@@ -167,9 +171,9 @@ func runEmitIR(args []string) int {
 	prune := fs.Bool("prune", false, "remove unreferenced internal types")
 	compact := fs.Bool("compact", false, "compact JSON output (no indentation)")
 	noSource := fs.Bool("no-source", false, "omit source text from output")
+	treeShake := fs.Bool("tree-shake", false, "only emit types/symbols reachable from user code")
 	help := fs.Bool("h", false, "show help")
 
-	// Pre-process: separate flags from positional args to support flags after filenames
 	var flagArgs, posArgs []string
 	for i := 0; i < len(args); i++ {
 		if args[i] == "-h" || args[i] == "--help" {
@@ -180,7 +184,7 @@ func runEmitIR(args []string) int {
 				i++
 				flagArgs = append(flagArgs, args[i])
 			}
-		} else if args[i] == "--prune" || args[i] == "--compact" || args[i] == "--no-source" {
+		} else if args[i] == "--prune" || args[i] == "--compact" || args[i] == "--no-source" || args[i] == "--tree-shake" {
 			flagArgs = append(flagArgs, args[i])
 		} else if len(args[i]) > 2 && args[i][0] == '-' && args[i][1] == '-' {
 			flagArgs = append(flagArgs, args[i])
@@ -206,6 +210,7 @@ Options:
   --prune        Remove unreferenced internal noise types
   --compact      Compact JSON output (no indentation)
   --no-source    Omit source text from output
+  --tree-shake   Only emit types/symbols reachable from user code (recommended)
 
 If no files or project are specified, processes all .ts files in the current directory.`)
 		return 0
@@ -246,9 +251,10 @@ If no files or project are specified, processes all .ts files in the current dir
 	}
 
 	opts := ir.EmitOptions{
-		Prune:    *prune,
-		Compact:  *compact,
-		NoSource: *noSource,
+		Prune:     *prune,
+		Compact:   *compact,
+		NoSource:  *noSource,
+		TreeShake: *treeShake,
 	}
 	emitter := ir.NewEmitter(program, opts)
 	_, err = emitter.Emit()

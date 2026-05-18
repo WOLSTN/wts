@@ -259,9 +259,10 @@ type Variable struct {
 }
 
 type EmitOptions struct {
-	Prune    bool // Filter out internal noise types
-	Compact  bool // Compact JSON output (no indentation, omit empty arrays)
-	NoSource bool // Omit source text from File entries
+	Prune     bool // Filter out internal noise types
+	Compact   bool // Compact JSON output (no indentation, omit empty arrays)
+	NoSource  bool // Omit source text from File entries
+	TreeShake bool // Only emit types/symbols reachable from user code
 }
 
 type typeState struct {
@@ -319,6 +320,10 @@ func (e *Emitter) Emit() (*Program, error) {
 
 	if e.options.Prune {
 		e.pruneTypes()
+	}
+
+	if e.options.TreeShake {
+		e.treeShake()
 	}
 
 	return e.irProgram, nil
@@ -2212,4 +2217,251 @@ func (e *Emitter) MarshalJSON() ([]byte, error) {
 
 func (e *Emitter) Serialize() ([]byte, error) {
 	return e.MarshalJSON()
+}
+
+func (e *Emitter) treeShake() {
+	reachableTypes := make(map[string]bool)
+	reachableSymbols := make(map[string]bool)
+	reachableSignatures := make(map[string]bool)
+
+	userFiles := make(map[string]bool)
+	for _, sf := range e.program.GetSourceFiles() {
+		if !sf.IsDeclarationFile {
+			userFiles[sf.FileName()] = true
+		}
+	}
+
+	libDeclPositions := make(map[string]bool)
+	for _, sf := range e.program.GetSourceFiles() {
+		if sf.IsDeclarationFile {
+			textLen := len(string(sf.Text()))
+			for i := 0; i <= textLen; i++ {
+				libDeclPositions[fmt.Sprintf("%d", i)] = true
+			}
+		}
+	}
+
+	isLibSymbol := func(s *Symbol) bool {
+		for _, decl := range s.Declarations {
+			if libDeclPositions[decl] {
+				return true
+			}
+		}
+		return false
+	}
+
+	var traceType func(typeId string, depth int)
+	var traceSymbol func(symbolId string, depth int)
+	var traceSignature func(sigId string, depth int)
+
+	maxDepth := 3
+
+	traceType = func(typeId string, depth int) {
+		if typeId == "" || reachableTypes[typeId] {
+			return
+		}
+		reachableTypes[typeId] = true
+
+		if depth >= maxDepth {
+			return
+		}
+
+		for _, t := range e.irProgram.Types {
+			if t.Id == typeId {
+				for _, subType := range t.Types {
+					traceType(subType, depth+1)
+				}
+				if t.Target != "" {
+					traceType(t.Target, depth+1)
+				}
+				for _, ta := range t.TypeArgs {
+					traceType(ta, depth+1)
+				}
+				if t.ObjectType != "" {
+					traceType(t.ObjectType, depth+1)
+				}
+				if t.IndexType != "" {
+					traceType(t.IndexType, depth+1)
+				}
+				break
+			}
+		}
+	}
+
+	traceSymbol = func(symbolId string, depth int) {
+		if symbolId == "" || reachableSymbols[symbolId] {
+			return
+		}
+
+		var sym *Symbol
+		for _, s := range e.irProgram.Symbols {
+			if s.Id == symbolId {
+				sym = s
+				break
+			}
+		}
+
+		if sym != nil && isLibSymbol(sym) && depth > 0 {
+			reachableSymbols[symbolId] = true
+			return
+		}
+
+		reachableSymbols[symbolId] = true
+
+		if depth >= maxDepth {
+			return
+		}
+
+		if sym != nil {
+			if sym.Parent != "" {
+				traceSymbol(sym.Parent, depth+1)
+			}
+		}
+	}
+
+	traceSignature = func(sigId string, depth int) {
+		if sigId == "" || reachableSignatures[sigId] {
+			return
+		}
+		reachableSignatures[sigId] = true
+
+		if depth >= maxDepth {
+			return
+		}
+
+		for _, sig := range e.irProgram.Signatures {
+			if sig.Id == sigId {
+				for _, p := range sig.Parameters {
+					if p.Type != "" {
+						traceType(p.Type, depth+1)
+					}
+				}
+				if sig.ReturnType != "" {
+					traceType(sig.ReturnType, depth+1)
+				}
+				break
+			}
+		}
+	}
+
+	for _, file := range e.irProgram.Files {
+		if userFiles[file.Path] {
+			var traceNode func(node *ASTNode)
+			traceNode = func(node *ASTNode) {
+				if node.Type != "" {
+					traceType(node.Type, 0)
+				}
+				if node.Symbol != "" {
+					traceSymbol(node.Symbol, 0)
+				}
+				for _, child := range node.Children {
+					traceNode(child)
+				}
+			}
+			for _, node := range file.Nodes {
+				traceNode(node)
+			}
+		}
+	}
+
+	for _, imp := range e.irProgram.Imports {
+		traceSymbol(imp.Symbol, 0)
+		for _, spec := range imp.Specifiers {
+			traceSymbol(spec.Symbol, 0)
+		}
+	}
+
+	for _, fn := range e.irProgram.Functions {
+		traceSymbol(fn.Symbol, 0)
+		for _, p := range fn.Parameters {
+			if p.Type != "" {
+				traceType(p.Type, 0)
+			}
+		}
+		if fn.ReturnType != "" {
+			traceType(fn.ReturnType, 0)
+		}
+		if fn.Signature != "" {
+			traceSignature(fn.Signature, 0)
+		}
+	}
+
+	for _, v := range e.irProgram.Variables {
+		traceSymbol(v.Symbol, 0)
+		if v.Type != "" {
+			traceType(v.Type, 0)
+		}
+	}
+
+	filteredTypes := make([]*Type, 0, len(reachableTypes))
+	for _, t := range e.irProgram.Types {
+		if reachableTypes[t.Id] {
+			filteredTypes = append(filteredTypes, t)
+		}
+	}
+	e.irProgram.Types = filteredTypes
+
+	filteredSymbols := make([]*Symbol, 0, len(reachableSymbols))
+	for _, s := range e.irProgram.Symbols {
+		if reachableSymbols[s.Id] {
+			filteredSymbols = append(filteredSymbols, s)
+		}
+	}
+	e.irProgram.Symbols = filteredSymbols
+
+	filteredSignatures := make([]*Signature, 0, len(reachableSignatures))
+	for _, sig := range e.irProgram.Signatures {
+		if reachableSignatures[sig.Id] {
+			filteredSignatures = append(filteredSignatures, sig)
+		}
+	}
+	e.irProgram.Signatures = filteredSignatures
+
+	filteredGlobals := make([]*Global, 0)
+	for _, g := range e.irProgram.Globals {
+		if reachableSymbols[g.Symbol] {
+			filteredGlobals = append(filteredGlobals, g)
+		}
+	}
+	e.irProgram.Globals = filteredGlobals
+
+	filteredClasses := make([]*Class, 0)
+	for _, c := range e.irProgram.Classes {
+		if reachableSymbols[c.Symbol] {
+			filteredClasses = append(filteredClasses, c)
+		}
+	}
+	e.irProgram.Classes = filteredClasses
+
+	filteredInterfaces := make([]*Interface, 0)
+	for _, i := range e.irProgram.Interfaces {
+		if reachableSymbols[i.Symbol] {
+			filteredInterfaces = append(filteredInterfaces, i)
+		}
+	}
+	e.irProgram.Interfaces = filteredInterfaces
+
+	filteredEnums := make([]*Enum, 0)
+	for _, en := range e.irProgram.Enums {
+		if reachableSymbols[en.Symbol] {
+			filteredEnums = append(filteredEnums, en)
+		}
+	}
+	e.irProgram.Enums = filteredEnums
+
+	filteredTypeAliases := make([]*TypeAlias, 0)
+	for _, ta := range e.irProgram.TypeAliases {
+		if reachableSymbols[ta.Symbol] {
+			filteredTypeAliases = append(filteredTypeAliases, ta)
+		}
+	}
+	e.irProgram.TypeAliases = filteredTypeAliases
+
+	filteredNamespaces := make([]*Namespace, 0)
+	for _, ns := range e.irProgram.Namespaces {
+		if reachableSymbols[ns.Symbol] {
+			filteredNamespaces = append(filteredNamespaces, ns)
+		}
+	}
+	e.irProgram.Namespaces = filteredNamespaces
 }

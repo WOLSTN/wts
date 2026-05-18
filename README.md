@@ -102,6 +102,7 @@ The output `.wir` file is a JSON-formatted IR containing the full typed program:
 
 | Flag | Description |
 |---|---|
+| `--tree-shake` | **Recommended.** Only emit types/symbols reachable from user code. Reduces IR size by 40-50x by removing unused DOM/lib types |
 | `--prune` | Remove internal noise types (empty sentinels, zero-value stubs that carry no type information) |
 | `--compact` | Compact JSON output — no indentation, smaller file size (~40% reduction) |
 | `--no-source` | Omit source text from `File` entries — reduces file size and avoids embedding full source |
@@ -109,9 +110,31 @@ The output `.wir` file is a JSON-formatted IR containing the full typed program:
 Combine flags as needed:
 
 ```bash
-# Minimal, production-ready IR
-wts emit-ir --prune --compact --no-source main.ts -o main.wir
+# Minimal, production-ready IR (recommended)
+wts emit-ir --tree-shake --compact --no-source main.ts -o main.wir
 ```
+
+#### Tree-Shaking
+
+TypeScript's `lib.dom.d.ts` and other library files contain thousands of type definitions. Without tree-shaking, a simple `console.log("hello")` program would generate a 15MB IR file containing all DOM types.
+
+The `--tree-shake` option performs reachability analysis starting from your code:
+
+1. Find all source files (non-declaration files)
+2. Trace reachable types, symbols, and signatures from user code
+3. Prune everything not reachable
+
+**Example:**
+
+```bash
+# Without tree-shake: 14.84 MB, 14545 types
+wts emit-ir hi2.ts -o hi2.wir
+
+# With tree-shake: 0.32 MB, 363 types (46x smaller)
+wts emit-ir hi2.ts --tree-shake -o hi2.wir
+```
+
+Tree-shaking preserves all semantic information needed for compilation — it only removes types that are never referenced from your code.
 
 ## IR Format
 
