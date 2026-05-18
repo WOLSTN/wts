@@ -259,9 +259,10 @@ type Variable struct {
 }
 
 type EmitOptions struct {
-	Prune    bool // Filter out internal noise types
-	Compact  bool // Compact JSON output (no indentation, omit empty arrays)
-	NoSource bool // Omit source text from File entries
+	Prune     bool // Filter out internal noise types
+	Compact   bool // Compact JSON output (no indentation, omit empty arrays)
+	NoSource  bool // Omit source text from File entries
+	MainNoWtl bool // Use main as entry point, skip __wolstn_toplevel generation
 }
 
 type typeState struct {
@@ -376,6 +377,7 @@ func (e *Emitter) emitSourceFiles() {
 		e.emitFileImports(sf)
 		e.emitFileExports(sf)
 		e.emitFileDeclarations(sf)
+		e.emitTopLevelStatements(sf)
 	}
 
 	for _, sym := range e.checkerData.Globals {
@@ -404,6 +406,114 @@ func (e *Emitter) emitSourceFiles() {
 			e.emitVariableFromSymbol(sym)
 		}
 	}
+}
+
+func (e *Emitter) emitTopLevelStatements(sf *ast.SourceFile) {
+	if e.options.MainNoWtl {
+		return
+	}
+
+	var topLevelStmts []*ast.Node
+	for _, stmt := range sf.Statements.Nodes {
+		switch stmt.Kind {
+		case ast.KindExpressionStatement:
+			topLevelStmts = append(topLevelStmts, stmt)
+		}
+	}
+
+	if len(topLevelStmts) == 0 {
+		return
+	}
+
+	var voidTypeId string
+	for _, t := range e.irProgram.Types {
+		if t.Kind == "void" {
+			voidTypeId = t.Id
+			break
+		}
+	}
+
+	hasMainCall := false
+	for _, stmt := range topLevelStmts {
+		expr := stmt.Expression()
+		if expr != nil && expr.Kind == ast.KindCallExpression {
+			callee := expr.Expression()
+			if callee != nil && callee.Kind == ast.KindIdentifier && callee.Text() == "main" {
+				hasMainCall = true
+				break
+			}
+		}
+	}
+
+	var originalMain *Function
+	if hasMainCall {
+		for i, f := range e.irProgram.Functions {
+			if f.Name == "main" && f.Body != nil {
+				originalMain = f
+				e.irProgram.Functions = append(e.irProgram.Functions[:i], e.irProgram.Functions[i+1:]...)
+				break
+			}
+		}
+		if originalMain != nil {
+			userMain := &Function{
+				Name:       "__wolstn_user_main",
+				Symbol:     "s_user_main",
+				Parameters: originalMain.Parameters,
+				ReturnType: originalMain.ReturnType,
+				Body:       originalMain.Body,
+			}
+			e.irProgram.Functions = append(e.irProgram.Functions, userMain)
+		}
+	}
+
+	be := &bodyEmitter{e: e}
+	entry := be.addBlock("entry")
+	be.curBlock = entry
+
+	if hasMainCall && originalMain != nil {
+		userMainIdentId := be.addInstr("ident", "", "__wolstn_user_main", nil)
+		be.addInstr("call", voidTypeId, nil, []string{userMainIdentId})
+	}
+
+	for _, stmt := range topLevelStmts {
+		expr := stmt.Expression()
+		if expr != nil && expr.Kind == ast.KindCallExpression {
+			callee := expr.Expression()
+			if callee != nil && callee.Kind == ast.KindIdentifier && callee.Text() == "main" {
+				continue
+			}
+		}
+		be.emitStatement(stmt)
+		if be.curBlock == nil {
+			break
+		}
+	}
+
+	if len(be.body.Blocks) == 0 {
+		return
+	}
+
+	fn := &Function{
+		Name:       "__wolstn_toplevel",
+		Symbol:     "s_toplevel",
+		Body:       be.body,
+		ReturnType: voidTypeId,
+	}
+	e.irProgram.Functions = append(e.irProgram.Functions, fn)
+
+	be2 := &bodyEmitter{e: e}
+	entry2 := be2.addBlock("entry")
+	be2.curBlock = entry2
+	toplevelIdentId := be2.addInstr("ident", "", "__wolstn_toplevel", nil)
+	be2.addInstr("call", voidTypeId, nil, []string{toplevelIdentId})
+
+	newMain := &Function{
+		Name:       "main",
+		Symbol:     "s_main_entry",
+		ReturnType: voidTypeId,
+		Body:       be2.body,
+	}
+	e.irProgram.Functions = append(e.irProgram.Functions, newMain)
 }
 
 func (e *Emitter) emitFileImports(sf *ast.SourceFile) {

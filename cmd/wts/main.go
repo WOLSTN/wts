@@ -167,6 +167,7 @@ func runEmitIR(args []string) int {
 	prune := fs.Bool("prune", false, "remove unreferenced internal types")
 	compact := fs.Bool("compact", false, "compact JSON output (no indentation)")
 	noSource := fs.Bool("no-source", false, "omit source text from output")
+	mainNoWtl := fs.Bool("main-no-wtl", false, "use main as entry point, skip __wolstn_toplevel generation")
 	help := fs.Bool("h", false, "show help")
 
 	// Pre-process: separate flags from positional args to support flags after filenames
@@ -180,7 +181,7 @@ func runEmitIR(args []string) int {
 				i++
 				flagArgs = append(flagArgs, args[i])
 			}
-		} else if args[i] == "--prune" || args[i] == "--compact" || args[i] == "--no-source" {
+		} else if args[i] == "--prune" || args[i] == "--compact" || args[i] == "--no-source" || args[i] == "--main-no-wtl" {
 			flagArgs = append(flagArgs, args[i])
 		} else if len(args[i]) > 2 && args[i][0] == '-' && args[i][1] == '-' {
 			flagArgs = append(flagArgs, args[i])
@@ -200,12 +201,13 @@ func runEmitIR(args []string) int {
 		fmt.Println(`Usage: wts emit-ir [options] [files...]
 
 Options:
-  -p <path>      Path to tsconfig.json (default: auto-detect)
-  -o <path>      Output file path (default: stdout)
-  -h             Show this help message
-  --prune        Remove unreferenced internal noise types
-  --compact      Compact JSON output (no indentation)
-  --no-source    Omit source text from output
+  -p <path>        Path to tsconfig.json (default: auto-detect)
+  -o <path>        Output file path (default: stdout)
+  -h               Show this help message
+  --prune          Remove unreferenced internal noise types
+  --compact        Compact JSON output (no indentation)
+  --no-source      Omit source text from output
+  --main-no-wtl    Use main as entry point, skip __wolstn_toplevel generation
 
 If no files or project are specified, processes all .ts files in the current directory.`)
 		return 0
@@ -246,9 +248,10 @@ If no files or project are specified, processes all .ts files in the current dir
 	}
 
 	opts := ir.EmitOptions{
-		Prune:    *prune,
-		Compact:  *compact,
-		NoSource: *noSource,
+		Prune:     *prune,
+		Compact:   *compact,
+		NoSource:  *noSource,
+		MainNoWtl: *mainNoWtl,
 	}
 	emitter := ir.NewEmitter(program, opts)
 	_, err = emitter.Emit()
