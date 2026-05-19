@@ -1316,8 +1316,10 @@ func (be *bodyEmitter) emitStatement(stmt *ast.Node) {
 		be.emitDoStatement(stmt)
 	case ast.KindForStatement:
 		be.emitForStatement(stmt)
-	case ast.KindForInStatement, ast.KindForOfStatement:
-		be.emitExpression(stmt)
+	case ast.KindForInStatement:
+		be.emitForInStatement(stmt)
+	case ast.KindForOfStatement:
+		be.emitForOfStatement(stmt)
 	case ast.KindSwitchStatement:
 		be.emitSwitchStatement(stmt)
 	case ast.KindBlock:
@@ -1329,7 +1331,7 @@ func (be *bodyEmitter) emitStatement(stmt *ast.Node) {
 	case ast.KindEmptyStatement:
 		// nothing
 	case ast.KindTryStatement:
-		be.emitExpression(stmt)
+		be.emitTryStatement(stmt)
 	case ast.KindThrowStatement:
 		be.emitThrowStatement(stmt)
 	case ast.KindDebuggerStatement:
@@ -1362,13 +1364,11 @@ func (be *bodyEmitter) emitVariableDeclaration(decl *ast.Node) {
 	id := ""
 	if initializer != nil {
 		valId := be.emitExpression(initializer)
-		id = be.addInstr("store", be.e.getNodeType(decl), nil, []string{valId})
+		id = be.addInstr("store", be.e.getNodeType(decl), nameText, []string{valId})
 	} else {
-		id = be.addInstr("alloc", be.e.getNodeType(decl), nil, nil)
+		id = be.addInstr("alloc", be.e.getNodeType(decl), nameText, nil)
 	}
-	if nameText != "" {
-		_ = id
-	}
+	_ = id
 }
 
 func (be *bodyEmitter) emitReturnStatement(stmt *ast.Node) {
@@ -1574,6 +1574,204 @@ func (be *bodyEmitter) emitSwitchStatement(stmt *ast.Node) {
 	}
 	be.addInstr("jmp", "", nil, []string{endBB.Label})
 	be.connectBlocks(be.curBlock, endBB)
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitForInStatement(stmt *ast.Node) {
+	forIn := stmt.AsForInOrOfStatement()
+
+	initBB := be.addBlock("forin.init")
+	condBB := be.addBlock("forin.cond")
+	bodyBB := be.addBlock("forin.body")
+	endBB := be.addBlock("forin.end")
+
+	be.addInstr("jmp", "", nil, []string{initBB.Label})
+	be.connectBlocks(be.curBlock, initBB)
+
+	be.curBlock = initBB
+
+	if forIn.Initializer != nil {
+		if forIn.Initializer.Kind == ast.KindVariableDeclarationList {
+			declList := forIn.Initializer.AsVariableDeclarationList()
+			for _, decl := range declList.Declarations.Nodes {
+				be.emitVariableDeclaration(decl)
+			}
+		}
+	}
+
+	objId := be.emitExpression(forIn.Expression)
+	iterId := be.addInstr("iter.keys", be.e.getNodeType(forIn.Expression), nil, []string{objId})
+
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(initBB, condBB)
+
+	be.curBlock = condBB
+	hasNextId := be.addInstr("iter.has_next", "", nil, []string{iterId})
+	be.addInstr("br", "", nil, []string{hasNextId, bodyBB.Label, endBB.Label})
+	be.connectBlocks(condBB, bodyBB)
+	be.connectBlocks(condBB, endBB)
+
+	be.curBlock = bodyBB
+	keyId := be.addInstr("iter.next", "", nil, []string{iterId})
+
+	if forIn.Initializer != nil {
+		if forIn.Initializer.Kind == ast.KindVariableDeclarationList {
+			declList := forIn.Initializer.AsVariableDeclarationList()
+			for _, decl := range declList.Declarations.Nodes {
+				name := decl.AsVariableDeclaration().Name()
+				if name != nil {
+					nameText := name.Text()
+					be.addInstr("store", be.e.getNodeType(decl), nameText, []string{keyId})
+				}
+			}
+		}
+	}
+
+	body := forIn.Statement
+	if body != nil {
+		if body.Kind == ast.KindBlock {
+			be.emitBlockStatements(body)
+		} else {
+			be.emitStatement(body)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(bodyBB, condBB)
+
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitForOfStatement(stmt *ast.Node) {
+	forOf := stmt.AsForInOrOfStatement()
+
+	initBB := be.addBlock("forof.init")
+	condBB := be.addBlock("forof.cond")
+	bodyBB := be.addBlock("forof.body")
+	endBB := be.addBlock("forof.end")
+
+	be.addInstr("jmp", "", nil, []string{initBB.Label})
+	be.connectBlocks(be.curBlock, initBB)
+
+	be.curBlock = initBB
+
+	if forOf.Initializer != nil {
+		if forOf.Initializer.Kind == ast.KindVariableDeclarationList {
+			declList := forOf.Initializer.AsVariableDeclarationList()
+			for _, decl := range declList.Declarations.Nodes {
+				be.emitVariableDeclaration(decl)
+			}
+		}
+	}
+
+	objId := be.emitExpression(forOf.Expression)
+
+	var iterTyp string
+	if forOf.AwaitModifier != nil {
+		iterId := be.addInstr("iter.async_values", be.e.getNodeType(forOf.Expression), nil, []string{objId})
+		iterTyp = iterId
+	} else {
+		iterTyp = be.addInstr("iter.values", be.e.getNodeType(forOf.Expression), nil, []string{objId})
+	}
+
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(initBB, condBB)
+
+	be.curBlock = condBB
+	hasNextId := be.addInstr("iter.has_next", "", nil, []string{iterTyp})
+	be.addInstr("br", "", nil, []string{hasNextId, bodyBB.Label, endBB.Label})
+	be.connectBlocks(condBB, bodyBB)
+	be.connectBlocks(condBB, endBB)
+
+	be.curBlock = bodyBB
+	valId := be.addInstr("iter.next", "", nil, []string{iterTyp})
+
+	if forOf.Initializer != nil {
+		if forOf.Initializer.Kind == ast.KindVariableDeclarationList {
+			declList := forOf.Initializer.AsVariableDeclarationList()
+			for _, decl := range declList.Declarations.Nodes {
+				name := decl.AsVariableDeclaration().Name()
+				if name != nil {
+					nameText := name.Text()
+					be.addInstr("store", be.e.getNodeType(decl), nameText, []string{valId})
+				}
+			}
+		}
+	}
+
+	body := forOf.Statement
+	if body != nil {
+		if body.Kind == ast.KindBlock {
+			be.emitBlockStatements(body)
+		} else {
+			be.emitStatement(body)
+		}
+	}
+	be.addInstr("jmp", "", nil, []string{condBB.Label})
+	be.connectBlocks(bodyBB, condBB)
+
+	be.curBlock = endBB
+}
+
+func (be *bodyEmitter) emitTryStatement(stmt *ast.Node) {
+	tryStmt := stmt.AsTryStatement()
+
+	tryBB := be.addBlock("try.body")
+	catchBB := be.addBlock("try.catch")
+	finallyBB := be.addBlock("try.finally")
+	endBB := be.addBlock("try.end")
+
+	hasCatch := tryStmt.CatchClause != nil
+	hasFinally := tryStmt.FinallyBlock != nil
+
+	be.addInstr("try.begin", "", nil, nil)
+	be.addInstr("jmp", "", nil, []string{tryBB.Label})
+	be.connectBlocks(be.curBlock, tryBB)
+
+	be.curBlock = tryBB
+	if tryStmt.TryBlock != nil {
+		be.emitBlockStatements(tryStmt.TryBlock)
+	}
+	be.addInstr("try.end", "", nil, nil)
+
+	if hasFinally {
+		be.addInstr("jmp", "", nil, []string{finallyBB.Label})
+		be.connectBlocks(be.curBlock, finallyBB)
+	} else {
+		be.addInstr("jmp", "", nil, []string{endBB.Label})
+		be.connectBlocks(be.curBlock, endBB)
+	}
+
+	if hasCatch {
+		be.curBlock = catchBB
+		be.addInstr("catch.begin", "", nil, nil)
+
+		catchClause := tryStmt.CatchClause.AsCatchClause()
+		if catchClause.VariableDeclaration != nil {
+			be.emitVariableDeclaration(catchClause.VariableDeclaration)
+		}
+		if catchClause.Block != nil {
+			be.emitBlockStatements(catchClause.Block)
+		}
+
+		be.addInstr("catch.end", "", nil, nil)
+		if hasFinally {
+			be.addInstr("jmp", "", nil, []string{finallyBB.Label})
+			be.connectBlocks(be.curBlock, finallyBB)
+		} else {
+			be.addInstr("jmp", "", nil, []string{endBB.Label})
+			be.connectBlocks(be.curBlock, endBB)
+		}
+	}
+
+	if hasFinally {
+		be.curBlock = finallyBB
+		be.addInstr("finally.begin", "", nil, nil)
+		be.emitBlockStatements(tryStmt.FinallyBlock)
+		be.addInstr("finally.end", "", nil, nil)
+		be.addInstr("jmp", "", nil, []string{endBB.Label})
+		be.connectBlocks(be.curBlock, endBB)
+	}
+
 	be.curBlock = endBB
 }
 
