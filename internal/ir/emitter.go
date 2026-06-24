@@ -1723,7 +1723,13 @@ func (be *bodyEmitter) emitTryStatement(stmt *ast.Node) {
 	hasCatch := tryStmt.CatchClause != nil
 	hasFinally := tryStmt.FinallyBlock != nil
 
-	be.addInstr("try.begin", "", nil, nil)
+	var tryTargets []string
+	if hasCatch {
+		tryTargets = append(tryTargets, catchBB.Label)
+	} else if hasFinally {
+		tryTargets = append(tryTargets, finallyBB.Label)
+	}
+	be.addInstr("try.begin", "", nil, tryTargets)
 	be.addInstr("jmp", "", nil, []string{tryBB.Label})
 	be.connectBlocks(be.curBlock, tryBB)
 
