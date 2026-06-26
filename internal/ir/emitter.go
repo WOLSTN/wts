@@ -229,6 +229,7 @@ type Function struct {
 	Body       *FuncBody  `json:"body,omitempty"`
 	IsAsync    bool       `json:"isAsync,omitempty"`
 	IsGenerator bool      `json:"isGenerator,omitempty"`
+	IsExport   bool       `json:"isExport,omitempty"`
 }
 
 type FuncBody struct {
@@ -1184,6 +1185,7 @@ func (e *Emitter) emitFunctionFromSymbol(sym *ast.Symbol) {
 			if decl.Kind == ast.KindFunctionDeclaration {
 				fn.IsAsync = ast.HasSyntacticModifier(decl, ast.ModifierFlagsAsync)
 				fn.IsGenerator = decl.AsFunctionDeclaration().AsteriskToken != nil
+				fn.IsExport = ast.HasSyntacticModifier(decl, ast.ModifierFlagsExport)
 			}
 			funcType := e.checker.GetTypeOfSymbol(sym)
 			if funcType != nil {
