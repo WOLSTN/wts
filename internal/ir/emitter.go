@@ -922,6 +922,21 @@ func (e *Emitter) emitConstructorFromNode(ctorNode *ast.Node, classSym *ast.Symb
 			method.TypeParams = append(method.TypeParams, e.getOrCreateTypeId(tp))
 		}
 	}
+
+	body := e.emitFunctionBody(ctorNode)
+	if body != nil && len(body.Blocks) > 0 {
+		fullName := classSym.Name + ".constructor"
+		fn := &Function{
+			Name:       fullName,
+			Symbol:     method.Symbol,
+			Body:       body,
+			ReturnType: method.ReturnType,
+		}
+		for _, p := range method.Parameters {
+			fn.Parameters = append(fn.Parameters, Param{Name: p.Name, Type: p.Type})
+		}
+		e.irProgram.Functions = append(e.irProgram.Functions, fn)
+	}
 }
 
 func (e *Emitter) emitConstructor(classSym *ast.Symbol, declaredType *checker.Type) *Method {
@@ -1022,6 +1037,33 @@ func (e *Emitter) emitMethod(sym *ast.Symbol) *Method {
 					}
 				}
 			}
+		}
+	}
+
+	if len(sym.Declarations) > 0 {
+		decl := sym.Declarations[0]
+		body := e.emitFunctionBody(decl)
+		if body != nil && len(body.Blocks) > 0 {
+			className := ""
+			if sym.Parent != nil {
+				className = sym.Parent.Name
+			}
+			fullName := sym.Name
+			if className != "" {
+				fullName = className + "." + sym.Name
+			}
+			fn := &Function{
+				Name:       fullName,
+				Symbol:     method.Symbol,
+				Body:       body,
+				ReturnType: method.ReturnType,
+				IsAsync:    method.IsAsync,
+				IsGenerator: method.IsGenerator,
+			}
+			for _, p := range method.Parameters {
+				fn.Parameters = append(fn.Parameters, Param{Name: p.Name, Type: p.Type})
+			}
+			e.irProgram.Functions = append(e.irProgram.Functions, fn)
 		}
 	}
 
