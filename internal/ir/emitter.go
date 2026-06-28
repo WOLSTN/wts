@@ -1874,7 +1874,7 @@ func (be *bodyEmitter) emitExpression(node *ast.Node) string {
 	case ast.KindArrayLiteralExpression:
 		return be.emitArrayLiteral(node, typ)
 	case ast.KindObjectLiteralExpression:
-		return be.addInstr("object", typ, nil, nil)
+		return be.emitObjectLiteral(node, typ)
 	case ast.KindTemplateExpression:
 		return be.emitTemplateExpression(node, typ)
 	case ast.KindConditionalExpression:
@@ -2012,6 +2012,25 @@ func (be *bodyEmitter) emitArrayLiteral(node *ast.Node, typ string) string {
 		}
 	}
 	return be.addInstr("array", typ, nil, elemIds)
+}
+
+func (be *bodyEmitter) emitObjectLiteral(node *ast.Node, typ string) string {
+	objId := be.addInstr("object", typ, nil, nil)
+	ole := node.AsObjectLiteralExpression()
+	if ole.Properties != nil {
+		for _, propNode := range ole.Properties.Nodes {
+			if propNode.Kind == ast.KindPropertyAssignment {
+				pa := propNode.AsPropertyAssignment()
+				propName := pa.Name().Text()
+				valId := be.emitExpression(pa.Initializer)
+				
+				valTy := be.e.getNodeType(pa.Initializer)
+				propId := be.addInstr("prop", valTy, propName, []string{objId})
+				be.addInstr("store", valTy, nil, []string{propId, valId})
+			}
+		}
+	}
+	return objId
 }
 
 func (be *bodyEmitter) emitTemplateExpression(node *ast.Node, typ string) string {
