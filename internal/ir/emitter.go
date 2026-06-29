@@ -104,8 +104,9 @@ type Signature struct {
 }
 
 type Param struct {
-	Name string `json:"name"`
-	Type string `json:"type,omitempty"`
+	Name   string `json:"name"`
+	Type   string `json:"type,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
 }
 
 type Symbol struct {
@@ -371,6 +372,7 @@ func (e *Emitter) pruneTypes() {
 }
 
 func (e *Emitter) emitSourceFiles() {
+	var allTopLevelStmts []*ast.Node
 	for _, sf := range e.program.GetSourceFiles() {
 		if sf.IsDeclarationFile {
 			continue
@@ -384,8 +386,17 @@ func (e *Emitter) emitSourceFiles() {
 		e.emitFileImports(sf)
 		e.emitFileExports(sf)
 		e.emitFileDeclarations(sf)
-		e.emitTopLevelStatements(sf)
+		
+		// Collect top level statements from this file
+		for _, stmt := range sf.Statements.Nodes {
+			switch stmt.Kind {
+			case ast.KindExpressionStatement, ast.KindVariableStatement:
+				allTopLevelStmts = append(allTopLevelStmts, stmt)
+			}
+		}
 	}
+
+	e.emitAllTopLevelStatements(allTopLevelStmts)
 
 	for _, sym := range e.checkerData.Globals {
 		if e.emittedSyms[sym] {
@@ -415,15 +426,7 @@ func (e *Emitter) emitSourceFiles() {
 	}
 }
 
-func (e *Emitter) emitTopLevelStatements(sf *ast.SourceFile) {
-	var topLevelStmts []*ast.Node
-	for _, stmt := range sf.Statements.Nodes {
-		switch stmt.Kind {
-		case ast.KindExpressionStatement:
-			topLevelStmts = append(topLevelStmts, stmt)
-		}
-	}
-
+func (e *Emitter) emitAllTopLevelStatements(topLevelStmts []*ast.Node) {
 	if len(topLevelStmts) == 0 {
 		return
 	}
@@ -438,6 +441,9 @@ func (e *Emitter) emitTopLevelStatements(sf *ast.SourceFile) {
 
 	hasMainCall := false
 	for _, stmt := range topLevelStmts {
+		if stmt.Kind != ast.KindExpressionStatement {
+			continue
+		}
 		expr := stmt.Expression()
 		if expr != nil && expr.Kind == ast.KindCallExpression {
 			callee := expr.Expression()
@@ -479,11 +485,13 @@ func (e *Emitter) emitTopLevelStatements(sf *ast.SourceFile) {
 	}
 
 	for _, stmt := range topLevelStmts {
-		expr := stmt.Expression()
-		if expr != nil && expr.Kind == ast.KindCallExpression {
-			callee := expr.Expression()
-			if callee != nil && callee.Kind == ast.KindIdentifier && callee.Text() == "main" {
-				continue
+		if stmt.Kind == ast.KindExpressionStatement {
+			expr := stmt.Expression()
+			if expr != nil && expr.Kind == ast.KindCallExpression {
+				callee := expr.Expression()
+				if callee != nil && callee.Kind == ast.KindIdentifier && callee.Text() == "main" {
+					continue
+				}
 			}
 		}
 		be.emitStatement(stmt)
@@ -901,7 +909,7 @@ func (e *Emitter) emitConstructorFromNode(ctorNode *ast.Node, classSym *ast.Symb
 			if pDecl == nil {
 				continue
 			}
-			p := Param{Name: pDecl.Name().Text()}
+			p := Param{Name: pDecl.Name().Text(), Symbol: e.getOrCreateSymbolId(pDecl.Symbol)}
 			if pDecl.Type != nil {
 				t := e.checker.GetTypeFromTypeNode(pDecl.Type)
 				if t != nil {
@@ -933,7 +941,7 @@ func (e *Emitter) emitConstructorFromNode(ctorNode *ast.Node, classSym *ast.Symb
 			ReturnType: method.ReturnType,
 		}
 		for _, p := range method.Parameters {
-			fn.Parameters = append(fn.Parameters, Param{Name: p.Name, Type: p.Type})
+			fn.Parameters = append(fn.Parameters, Param{Name: p.Name, Type: p.Type, Symbol: p.Symbol})
 		}
 		e.irProgram.Functions = append(e.irProgram.Functions, fn)
 	}
@@ -1023,7 +1031,7 @@ func (e *Emitter) emitMethod(sym *ast.Symbol) *Method {
 					sig := sigs[0]
 					method.Signature = e.getOrCreateSignatureId(sig)
 					for _, param := range sig.Parameters() {
-						p := Param{Name: param.Name}
+						p := Param{Name: param.Name, Symbol: e.getOrCreateSymbolId(param)}
 						if t := e.checker.GetTypeOfSymbol(param); t != nil {
 							p.Type = e.getOrCreateTypeId(t)
 						}
@@ -1061,7 +1069,7 @@ func (e *Emitter) emitMethod(sym *ast.Symbol) *Method {
 				IsGenerator: method.IsGenerator,
 			}
 			for _, p := range method.Parameters {
-				fn.Parameters = append(fn.Parameters, Param{Name: p.Name, Type: p.Type})
+				fn.Parameters = append(fn.Parameters, Param{Name: p.Name, Type: p.Type, Symbol: p.Symbol})
 			}
 			e.irProgram.Functions = append(e.irProgram.Functions, fn)
 		}
@@ -1239,7 +1247,7 @@ func (e *Emitter) emitFunctionFromSymbol(sym *ast.Symbol) {
 					sig := sigs[0]
 					fn.Signature = e.getOrCreateSignatureId(sig)
 					for _, param := range sig.Parameters() {
-						p := Param{Name: param.Name}
+						p := Param{Name: param.Name, Symbol: e.getOrCreateSymbolId(param)}
 						if t := e.checker.GetTypeOfSymbol(param); t != nil {
 							p.Type = e.getOrCreateTypeId(t)
 						}
@@ -1406,14 +1414,18 @@ func (be *bodyEmitter) emitVariableDeclaration(decl *ast.Node) {
 	if name == nil {
 		return
 	}
-	nameText := name.Text()
+	sym := decl.Symbol()
+	targetId := name.Text()
+	if sym != nil {
+		targetId = be.e.getOrCreateSymbolId(sym)
+	}
 	initializer := varDecl.Initializer
 	id := ""
 	if initializer != nil {
 		valId := be.emitExpression(initializer)
-		id = be.addInstr("store", be.e.getNodeType(decl), nameText, []string{valId})
+		id = be.addInstr("store", be.e.getNodeType(decl), targetId, []string{valId})
 	} else {
-		id = be.addInstr("alloc", be.e.getNodeType(decl), nameText, nil)
+		id = be.addInstr("alloc", be.e.getNodeType(decl), targetId, nil)
 	}
 	_ = id
 }
@@ -1848,6 +1860,10 @@ func (be *bodyEmitter) emitExpression(node *ast.Node) string {
 		return be.addInstr("literal", typ, nil, nil)
 	case ast.KindIdentifier:
 		text := node.Text()
+		sym := be.e.checker.GetResolvedSymbolOfNode(node)
+		if sym != nil {
+			text = be.e.getOrCreateSymbolId(sym)
+		}
 		return be.addInstr("ident", typ, text, nil)
 	case ast.KindThisKeyword:
 		return be.addInstr("this", typ, nil, nil)
@@ -2348,6 +2364,14 @@ func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
 	if sym == nil {
 		return ""
 	}
+	if exp := e.checker.GetExportSymbolOfSymbol(sym); exp != nil && exp != sym {
+		sym = exp
+	}
+	if sym.Flags&ast.SymbolFlagsAlias != 0 {
+		if resolved := e.checker.SkipAlias(sym); resolved != nil && resolved != sym {
+			sym = resolved
+		}
+	}
 	if id, ok := e.symbolMap[sym]; ok {
 		return id
 	}
@@ -2412,7 +2436,7 @@ func (e *Emitter) getOrCreateSignatureId(sig *checker.Signature) string {
 	}
 
 	for _, param := range sig.Parameters() {
-		p := Param{Name: param.Name}
+		p := Param{Name: param.Name, Symbol: e.getOrCreateSymbolId(param)}
 		if cachedType, ok := e.symTypeCache[param]; ok {
 			p.Type = cachedType
 		} else if t := e.checker.GetTypeOfSymbol(param); t != nil {
