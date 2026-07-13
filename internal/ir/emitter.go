@@ -2043,6 +2043,17 @@ func (be *bodyEmitter) emitObjectLiteral(node *ast.Node, typ string) string {
 				valTy := be.e.getNodeType(pa.Initializer)
 				propId := be.addInstr("prop", valTy, propName, []string{objId})
 				be.addInstr("store", valTy, nil, []string{propId, valId})
+			} else if propNode.Kind == ast.KindMethodDeclaration {
+				sym := propNode.Symbol()
+				if sym != nil {
+					be.e.emitMethod(sym)
+					propName := sym.Name
+					valTy := be.e.getNodeType(propNode)
+					propId := be.addInstr("prop", valTy, propName, []string{objId})
+					methodSymId := be.e.getOrCreateSymbolId(sym)
+					methodValId := be.addInstr("ident", valTy, methodSymId, nil)
+					be.addInstr("store", valTy, nil, []string{propId, methodValId})
+				}
 			}
 		}
 	}
@@ -2380,10 +2391,24 @@ func (e *Emitter) getOrCreateSymbolId(sym *ast.Symbol) string {
 	id := fmt.Sprintf("s%d", e.symbolIdGen)
 	e.symbolMap[sym] = id
 
+	flags := uint64(sym.Flags)
+	if sym.Flags&ast.SymbolFlagsBlockScopedVariable != 0 {
+		isConst := false
+		for _, decl := range sym.Declarations {
+			if ast.IsVarConst(decl) {
+				isConst = true
+				break
+			}
+		}
+		if !isConst {
+			flags &^= uint64(ast.SymbolFlagsBlockScopedVariable)
+		}
+	}
+
 	irSym := &Symbol{
 		Id:         id,
 		Name:       sym.Name,
-		Flags:      uint64(sym.Flags),
+		Flags:      flags,
 		CheckFlags: uint32(sym.CheckFlags),
 		Kind:       e.symbolKindToString(sym),
 	}
