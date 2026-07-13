@@ -2716,7 +2716,7 @@ func (e *Emitter) treeShake() {
 	}
 
 	for _, file := range e.irProgram.Files {
-		if userFiles[file.Path] {
+		if !strings.HasSuffix(file.Path, ".d.ts") {
 			var traceNode func(node *ASTNode)
 			traceNode = func(node *ASTNode) {
 				if node.Type != "" {
