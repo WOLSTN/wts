@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/wolstn/wts/internal/ast"
 	"github.com/wolstn/wts/internal/checker"
