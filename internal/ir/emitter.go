@@ -164,6 +164,7 @@ type Method struct {
 	IsAsync      bool    `json:"isAsync,omitempty"`
 	IsGenerator  bool    `json:"isGenerator,omitempty"`
 	Signature    string  `json:"signature,omitempty"`
+	VtableIndex  *int    `json:"vtableIndex,omitempty"`
 }
 
 type Enum struct {
@@ -823,19 +824,25 @@ func (e *Emitter) emitVariableStatementDeclarations(stmt *ast.Node) {
 }
 
 func (e *Emitter) emitClassFromSymbol(sym *ast.Symbol) {
+	if e.emittedSyms[sym] {
+		return
+	}
+	e.emittedSyms[sym] = true
+
 	irClass := &Class{
 		Name:   sym.Name,
 		Symbol: e.getOrCreateSymbolId(sym),
 	}
 
 	declaredType := e.checker.GetDeclaredTypeOfSymbol(sym)
+	var baseTypes []*checker.Type
 	if declaredType != nil {
 		typeParams := e.checker.GetLocalTypeParametersOfClassOrInterfaceOrTypeAlias(sym)
 		for _, tp := range typeParams {
 			irClass.TypeParams = append(irClass.TypeParams, e.getOrCreateTypeId(tp))
 		}
 
-		baseTypes := e.checker.GetBaseTypes(declaredType)
+		baseTypes = e.checker.GetBaseTypes(declaredType)
 		for _, bt := range baseTypes {
 			if bt.Symbol() != nil {
 				if bt.Symbol().Flags&ast.SymbolFlagsClass != 0 {
@@ -887,6 +894,51 @@ func (e *Emitter) emitClassFromSymbol(sym *ast.Symbol) {
 					}
 				}
 			}
+		}
+	}
+
+	// Calculate vtable index for non-static methods
+	var parentClass *Class
+	for _, bt := range baseTypes {
+		if bt.Symbol() != nil && bt.Symbol().Flags&ast.SymbolFlagsClass != 0 {
+			parentSym := bt.Symbol()
+			if !e.emittedSyms[parentSym] {
+				e.emitClassFromSymbol(parentSym)
+			}
+			parentSymId := e.getOrCreateSymbolId(parentSym)
+			for _, c := range e.irProgram.Classes {
+				if c.Symbol == parentSymId {
+					parentClass = c
+					break
+				}
+			}
+		}
+	}
+
+	parentVtable := make(map[string]int)
+	nextIndex := 0
+	if parentClass != nil {
+		for _, m := range parentClass.Methods {
+			if !m.IsStatic && m.VtableIndex != nil {
+				parentVtable[m.Name] = *m.VtableIndex
+				if *m.VtableIndex >= nextIndex {
+					nextIndex = *m.VtableIndex + 1
+				}
+			}
+		}
+	}
+
+	for _, m := range irClass.Methods {
+		if m.IsStatic {
+			continue
+		}
+		if parentIndex, ok := parentVtable[m.Name]; ok {
+			idx := parentIndex
+			m.VtableIndex = &idx
+		} else {
+			idx := nextIndex
+			m.VtableIndex = &idx
+			nextIndex++
 		}
 	}
 
@@ -2743,6 +2795,25 @@ func (e *Emitter) treeShake() {
 		}
 	}
 	e.irProgram.Globals = filteredGlobals
+
+	// Connect class constructor/references to class instance symbols to prevent incorrect tree-shaking
+	for {
+		changed := false
+		for _, c := range e.irProgram.Classes {
+			if !reachableSymbols[c.Symbol] {
+				for _, s := range e.irProgram.Symbols {
+					if reachableSymbols[s.Id] && s.Name == c.Name {
+						reachableSymbols[c.Symbol] = true
+						changed = true
+						break
+					}
+				}
+			}
+		}
+		if !changed {
+			break
+		}
+	}
 
 	filteredClasses := make([]*Class, 0)
 	for _, c := range e.irProgram.Classes {
