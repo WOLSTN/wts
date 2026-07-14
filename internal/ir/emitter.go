@@ -285,11 +285,12 @@ type Emitter struct {
 	sigState      map[*checker.Signature]*typeState
 	symbolMap     map[*ast.Symbol]string
 	symTypeCache  map[*ast.Symbol]string
-	emittedSyms   map[*ast.Symbol]bool
-	typeIdGen     int
-	symbolIdGen   int
-	sigIdGen      int
-	options       EmitOptions
+	emittedSyms    map[*ast.Symbol]bool
+	emittedClasses map[*ast.Symbol]bool
+	typeIdGen      int
+	symbolIdGen    int
+	sigIdGen       int
+	options        EmitOptions
 }
 
 func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
@@ -299,9 +300,10 @@ func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
 		typeState:   make(map[any]*typeState),
 		sigState:    make(map[*checker.Signature]*typeState),
 		symbolMap:   make(map[*ast.Symbol]string),
-		symTypeCache: make(map[*ast.Symbol]string),
-		emittedSyms: make(map[*ast.Symbol]bool),
-		options:     opts,
+		symTypeCache:   make(map[*ast.Symbol]string),
+		emittedSyms:    make(map[*ast.Symbol]bool),
+		emittedClasses: make(map[*ast.Symbol]bool),
+		options:        opts,
 	}
 }
 
@@ -825,10 +827,10 @@ func (e *Emitter) emitVariableStatementDeclarations(stmt *ast.Node) {
 }
 
 func (e *Emitter) emitClassFromSymbol(sym *ast.Symbol) {
-	if e.emittedSyms[sym] {
+	if e.emittedClasses[sym] {
 		return
 	}
-	e.emittedSyms[sym] = true
+	e.emittedClasses[sym] = true
 
 	irClass := &Class{
 		Name:   sym.Name,
