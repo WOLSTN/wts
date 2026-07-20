@@ -476,6 +476,11 @@ func (e *Emitter) emitAllTopLevelStatements(topLevelStmts []*ast.Node) {
 				Body:       originalMain.Body,
 			}
 			e.irProgram.Functions = append(e.irProgram.Functions, userMain)
+			e.irProgram.Symbols = append(e.irProgram.Symbols, &Symbol{
+				Id:   "s_user_main",
+				Name: "__wolstn_user_main",
+				Kind: "function",
+			})
 		}
 	}
 
@@ -529,6 +534,17 @@ func (e *Emitter) emitAllTopLevelStatements(topLevelStmts []*ast.Node) {
 		Body:       be2.body,
 	}
 	e.irProgram.Functions = append(e.irProgram.Functions, newMain)
+
+	e.irProgram.Symbols = append(e.irProgram.Symbols, &Symbol{
+		Id:   "s_toplevel",
+		Name: "__wolstn_toplevel",
+		Kind: "function",
+	})
+	e.irProgram.Symbols = append(e.irProgram.Symbols, &Symbol{
+		Id:   "s_main_entry",
+		Name: "main",
+		Kind: "function",
+	})
 }
 
 func (e *Emitter) emitFileImports(sf *ast.SourceFile) {
