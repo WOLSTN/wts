@@ -2290,6 +2290,14 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 	flags := t.Flags()
 
 	switch {
+	case e.checker.IsArrayType(t):
+		// 任务 2: 数组一等引用类型。
+		// 数组在 WIR 中以 kind="array" + elementFlags=[元素类型id] 表示，
+		// 后端据此将其 codegen 为单一指针（ARC 管理的堆对象）。
+		irType.Kind = "array"
+		if elemTy := e.checker.GetElementTypeOfArrayType(t); elemTy != nil {
+			irType.ElementFlags = append(irType.ElementFlags, e.getOrCreateTypeId(elemTy))
+		}
 	case flags&checker.TypeFlagsAny != 0:
 		irType.Kind = "any"
 	case flags&checker.TypeFlagsUnknown != 0:

@@ -243,6 +243,10 @@ func (c *Checker) GetNumberIndexType(t *Type) *Type {
 	return c.getIndexTypeOfType(t, c.numberType)
 }
 
+func (c *Checker) IsArrayType(t *Type) bool {
+	return c.isArrayType(t)
+}
+
 func (c *Checker) GetElementTypeOfArrayType(t *Type) *Type {
 	return c.getElementTypeOfArrayType(t)
 }
