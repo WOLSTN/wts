@@ -30,6 +30,10 @@ type Program struct {
 	Exports     []*Export    `json:"exports,omitempty"`
 	Functions   []*Function  `json:"functions,omitempty"`
 	Variables   []*Variable  `json:"variables,omitempty"`
+	// Runtime, when non-nil, carries the runtime binding descriptor authored on the
+	// frontend (see RuntimeDescriptor). Serialized as the top-level "runtime" field
+	// consumed by the wolstnc backend. Absent => backend applies its own defaults.
+	Runtime *RuntimeDescriptor `json:"runtime,omitempty"`
 }
 
 type File struct {
@@ -269,6 +273,33 @@ type EmitOptions struct {
 	Compact   bool // Compact JSON output (no indentation, omit empty arrays)
 	NoSource  bool // Omit source text from File entries
 	TreeShake bool // Only emit types/symbols reachable from user code
+	// Runtime, when non-nil, is serialized into the emitted WIR as the top-level
+	// "runtime" field. It enables a TS author to declare the runtime binding
+	// descriptor on the frontend instead of injecting it into the WIR afterwards
+	// (noStdRoadMap N.3 / miss-wts-002).
+	Runtime *RuntimeDescriptor
+}
+
+// RuntimeDescriptor is the WIR-side "runtime binding" descriptor. It mirrors the
+// `RuntimeDescriptor` defined by the wolstnc backend (wolstnc/src/ir/program.rs) exactly
+// at the JSON level, so that a TS author can author it on the *frontend* side.
+//
+// Every field uses camelCase JSON tags identical to the backend's serde(rename_all =
+// "camelCase") layout, and `omitempty` so that omitted fields fall back to the backend's
+// own defaults (e.g. `arcEnabled` defaults to true, `methodAliases` defaults to
+// {"console.log": "wolstn_console_log"}). This lets the author override *only* what they
+// need — a core tenet of the de-privileged design (AGENTS.md §8).
+//
+// `ArcEnabled` is a *pointer* so that "unset" (nil) is distinguishable from an explicit
+// `false`, preserving the backend default when the author does not mention it.
+type RuntimeDescriptor struct {
+	MethodAliases     map[string]string `json:"methodAliases,omitempty"`
+	PrintNumberSymbol string            `json:"printNumberSymbol,omitempty"`
+	PrintBoolSymbol   string            `json:"printBoolSymbol,omitempty"`
+	ArcEnabled        *bool             `json:"arcEnabled,omitempty"`
+	AllocSymbol       string            `json:"allocSymbol,omitempty"`
+	RetainSymbol      string            `json:"retainSymbol,omitempty"`
+	ReleaseSymbol     string            `json:"releaseSymbol,omitempty"`
 }
 
 type typeState struct {
@@ -348,6 +379,12 @@ func (e *Emitter) Emit() (*Program, error) {
 
 	if e.options.TreeShake {
 		e.treeShake()
+	}
+
+	// Propagate a frontend-authored runtime descriptor into the emitted WIR so the
+	// backend consumes it directly (no post-injection needed). nil => backend defaults.
+	if e.options.Runtime != nil {
+		e.irProgram.Runtime = e.options.Runtime
 	}
 
 	return e.irProgram, nil

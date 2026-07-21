@@ -25,6 +25,10 @@ var LibMap = collections.NewOrderedMapFromList([]collections.MapEntry[string, an
 	{Key: "es2024", Value: "lib.es2024.d.ts"},
 	{Key: "es2025", Value: "lib.es2025.d.ts"},
 	{Key: "esnext", Value: "lib.esnext.d.ts"},
+	// Kernel (WOLSTN-specific, no_std / kernel targets). Minimal runtime type surface
+	// with NO host dependencies (no DOM, no Node) — currently provides `console`.
+	// Decouples the runtime type surface from the language host (noStdRoadMap N.3).
+	{Key: "kernel", Value: "lib.kernel.d.ts"},
 	// Host only
 	{Key: "dom", Value: "lib.dom.d.ts"},
 	{Key: "dom.iterable", Value: "lib.dom.iterable.d.ts"},

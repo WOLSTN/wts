@@ -108,6 +108,7 @@ var LibNames = []string{
 	"lib.esnext.sharedmemory.d.ts",
 	"lib.esnext.temporal.d.ts",
 	"lib.esnext.typedarrays.d.ts",
+	"lib.kernel.d.ts",
 	"lib.scripthost.d.ts",
 	"lib.webworker.asynciterable.d.ts",
 	"lib.webworker.d.ts",

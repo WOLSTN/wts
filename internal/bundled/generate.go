@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -21,6 +22,11 @@ var (
 	libInputDir     = filepath.Join(repo.TypeScriptSubmodulePath(), "src", "lib")
 	copyrightNotice = filepath.Join(repo.TypeScriptSubmodulePath(), "scripts", "CopyrightNotice.txt")
 )
+
+// kernelLib is a WOLSTN-specific lib that is NOT part of the TypeScript submodule.
+// It is maintained in this repository (internal/bundled/libs/lib.kernel.d.ts) so that
+// kernel/no_std targets get a minimal, host-independent runtime type surface.
+const kernelLibTarget = "lib.kernel.d.ts"
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -34,6 +40,11 @@ func main() {
 type lib struct {
 	target  string   // target relative to libs dir
 	sources []string // sources relative to src/lib dir
+	local   bool     // true => maintained in this repo, not the TS submodule
+	// localContent holds the pre-read source for local libs, since generateLibs
+	// removes the libs directory before writing and would otherwise delete the
+	// very file it needs to copy.
+	localContent []byte
 }
 
 func generateLibs(libs []lib) {
@@ -51,17 +62,24 @@ func generateLibs(libs []lib) {
 
 	for _, lib := range libs {
 		var output bytes.Buffer
-		output.Write(copyright)
 
-		for _, source := range lib.sources {
-			sourcePath := filepath.Join(libInputDir, source)
-			b, err := os.ReadFile(sourcePath)
-			if err != nil {
-				log.Fatalf("failed to read %s: %v", sourcePath, err)
+		if lib.local {
+			// WOLSTN-specific lib: no upstream copyright header; use the
+			// pre-read (in-memory) content as-is.
+			output.Write(removeCRLF(lib.localContent))
+		} else {
+			output.Write(copyright)
+
+			for _, source := range lib.sources {
+				sourcePath := filepath.Join(libInputDir, source)
+				b, err := os.ReadFile(sourcePath)
+				if err != nil {
+					log.Fatalf("failed to read %s: %v", sourcePath, err)
+				}
+
+				output.WriteByte('\n')
+				output.Write(removeCRLF(b))
 			}
-
-			output.WriteByte('\n')
-			output.Write(removeCRLF(b))
 		}
 
 		outputPath := filepath.Join(outputDir, lib.target)
@@ -185,6 +203,30 @@ func readLibs() []lib {
 		}
 		libs = append(libs, lib{target: target, sources: sources})
 	}
+
+	slices.SortFunc(libs, func(a lib, b lib) int {
+		return strings.Compare(a.target, b.target)
+	})
+
+	// Append the WOLSTN-specific kernel lib. It lives in this repo, not the TS
+	// submodule, so we read it into memory here (generateLibs wipes the libs dir
+	// before writing). The source path is resolved relative to this source file so
+	// it works regardless of the working directory go generate is invoked from.
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatalf("failed to determine generate.go path for kernel lib")
+	}
+	kernelSource := filepath.Join(filepath.Dir(thisFile), "libs", kernelLibTarget)
+	kernelContent, err := os.ReadFile(kernelSource)
+	if err != nil {
+		log.Fatalf("failed to read kernel lib %s: %v", kernelSource, err)
+	}
+	libs = append(libs, lib{
+		target:      kernelLibTarget,
+		sources:     []string{kernelLibTarget},
+		local:       true,
+		localContent: kernelContent,
+	})
 
 	slices.SortFunc(libs, func(a lib, b lib) int {
 		return strings.Compare(a.target, b.target)

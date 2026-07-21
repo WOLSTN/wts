@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -156,13 +157,14 @@ If no files or project are specified, checks all .ts files in the current direct
 }
 
 type emitIRFlags struct {
-	project   string
-	output    string
-	help      bool
-	prune     bool
-	compact   bool
-	noSource  bool
-	treeShake bool
+	project          string
+	output           string
+	help             bool
+	prune            bool
+	compact          bool
+	noSource         bool
+	treeShake        bool
+	runtimeDescriptor string
 }
 
 func runEmitIR(args []string) int {
@@ -173,6 +175,7 @@ func runEmitIR(args []string) int {
 	compact := fs.Bool("compact", false, "compact JSON output (no indentation)")
 	noSource := fs.Bool("no-source", false, "omit source text from output")
 	treeShake := fs.Bool("tree-shake", false, "only emit types/symbols reachable from user code")
+	runtimeDescriptor := fs.String("runtime-descriptor", "", "path to a RuntimeDescriptor JSON file; injects it as the WIR 'runtime' field so the backend honors frontend-authored runtime bindings (no post-injection)")
 	help := fs.Bool("h", false, "show help")
 
 	var flagArgs, posArgs []string
@@ -187,6 +190,12 @@ func runEmitIR(args []string) int {
 			}
 		} else if args[i] == "--prune" || args[i] == "--compact" || args[i] == "--no-source" || args[i] == "--tree-shake" {
 			flagArgs = append(flagArgs, args[i])
+		} else if args[i] == "--runtime-descriptor" {
+			flagArgs = append(flagArgs, args[i])
+			if i+1 < len(args) {
+				i++
+				flagArgs = append(flagArgs, args[i])
+			}
 		} else if len(args[i]) > 2 && args[i][0] == '-' && args[i][1] == '-' {
 			flagArgs = append(flagArgs, args[i])
 		} else if len(args[i]) > 1 && args[i][0] == '-' && args[i][1] != '-' {
@@ -212,6 +221,7 @@ Options:
   --compact      Compact JSON output (no indentation)
   --no-source    Omit source text from output
   --tree-shake   Only emit types/symbols reachable from user code (recommended)
+  --runtime-descriptor <path>  Inject a RuntimeDescriptor JSON as the WIR 'runtime' field
 
 If no files or project are specified, processes all .ts files in the current directory.`)
 		return 0
@@ -256,6 +266,22 @@ If no files or project are specified, processes all .ts files in the current dir
 		Compact:   *compact,
 		NoSource:  *noSource,
 		TreeShake: *treeShake,
+	}
+
+	// Load a frontend-authored runtime descriptor (noStdRoadMap N.3 / miss-wts-002).
+	var runtimeDesc *ir.RuntimeDescriptor
+	if *runtimeDescriptor != "" {
+		rdData, err := os.ReadFile(*runtimeDescriptor)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading runtime descriptor %q: %v\n", *runtimeDescriptor, err)
+			return 1
+		}
+		runtimeDesc = &ir.RuntimeDescriptor{}
+		if err := json.Unmarshal(rdData, runtimeDesc); err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing runtime descriptor %q: %v\n", *runtimeDescriptor, err)
+			return 1
+		}
+		opts.Runtime = runtimeDesc
 	}
 	emitter := ir.NewEmitter(program, opts)
 	_, err = emitter.Emit()
