@@ -296,7 +296,23 @@ type Emitter struct {
 func NewEmitter(program *compiler.Program, opts EmitOptions) *Emitter {
 	return &Emitter{
 		program:     program,
-		irProgram:   &Program{Version: Version},
+		irProgram: &Program{
+			Version: Version,
+			// Initialize every top-level sequence field to an empty (non-nil) slice.
+			// The wolstnc backend's WIR parser requires these to be JSON arrays;
+			// a nil slice marshals as `null` and is rejected with
+			// "invalid type: null, expected a sequence". This happens whenever a
+			// program emits no classes/interfaces/etc. (e.g. `-p` project mode with
+			// `noLib: true`), so the slices must be pre-seeded rather than relying on
+			// emit* helpers to populate them.
+			Files:      []*File{},
+			Types:      []*Type{},
+			Symbols:    []*Symbol{},
+			Signatures: []*Signature{},
+			Globals:    []*Global{},
+			Classes:    []*Class{},
+			Interfaces: []*Interface{},
+		},
 		typeState:   make(map[any]*typeState),
 		sigState:    make(map[*checker.Signature]*typeState),
 		symbolMap:   make(map[*ast.Symbol]string),

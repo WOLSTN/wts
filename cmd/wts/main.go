@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/wolstn/wts/internal/ast"
 	"github.com/wolstn/wts/internal/bundled"
@@ -284,44 +285,8 @@ If no files or project are specified, processes all .ts files in the current dir
 }
 
 func createProgramFromArgs(project string, files []string, cwd string) (*compiler.Program, error) {
-	var fileNames []string
-
-	if project != "" {
-		absPath, err := filepath.Abs(project)
-		if err != nil {
-			return nil, fmt.Errorf("resolving project path: %w", err)
-		}
-		fileNames = []string{absPath}
-	} else if len(files) > 0 {
-		for _, f := range files {
-			abs, err := filepath.Abs(f)
-			if err != nil {
-				abs = f
-			}
-			fileNames = append(fileNames, abs)
-		}
-	} else {
-		tsconfigPath := filepath.Join(cwd, "tsconfig.json")
-		if _, err := os.Stat(tsconfigPath); err == nil {
-			fileNames = []string{tsconfigPath}
-		} else {
-			return nil, fmt.Errorf("no input files or tsconfig.json found")
-		}
-	}
-
-	compilerOptions := &core.CompilerOptions{
-		Target: core.ScriptTargetESNext,
-		Module: core.ModuleKindESNext,
-		Strict: core.TSTrue,
-	}
-
-	compareOpts := tspath.ComparePathsOptions{
-		CurrentDirectory:          cwd,
-		UseCaseSensitiveFileNames: false,
-	}
-
-	parsedConfig := tsoptions.NewParsedCommandLine(compilerOptions, fileNames, compareOpts)
-
+	// Create the host up-front: it is needed both to read the tsconfig text and to
+	// act as the ParseConfigHost that resolves `files`/`include` globs.
 	fs := osvfs.FS()
 	host := compiler.NewCachedFSCompilerHost(
 		cwd,
@@ -331,10 +296,105 @@ func createProgramFromArgs(project string, files []string, cwd string) (*compile
 		nil,
 	)
 
+	baseOptions := &core.CompilerOptions{
+		Target: core.ScriptTargetESNext,
+		Module: core.ModuleKindESNext,
+		Strict: core.TSTrue,
+	}
+
+	compareOpts := tspath.ComparePathsOptions{
+		CurrentDirectory:          cwd,
+		UseCaseSensitiveFileNames: host.FS().UseCaseSensitiveFileNames(),
+	}
+
+	var parsedConfig *tsoptions.ParsedCommandLine
+	var err error
+
+	switch {
+	case project != "":
+		configPath, errResolve := resolveTsConfigPath(project, cwd)
+		if errResolve != nil {
+			return nil, errResolve
+		}
+		parsedConfig, err = parseTsConfig(configPath, host, cwd, baseOptions)
+		if err != nil {
+			return nil, err
+		}
+	case len(files) > 0:
+		var fileNames []string
+		for _, f := range files {
+			abs, absErr := filepath.Abs(f)
+			if absErr != nil {
+				abs = f
+			}
+			fileNames = append(fileNames, abs)
+		}
+		parsedConfig = tsoptions.NewParsedCommandLine(baseOptions, fileNames, compareOpts)
+	default:
+		// No input files or project specified; default to tsconfig.json in cwd if present.
+		tsconfigPath := filepath.Join(cwd, "tsconfig.json")
+		if _, statErr := os.Stat(tsconfigPath); statErr == nil {
+			parsedConfig, err = parseTsConfig(tsconfigPath, host, cwd, baseOptions)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("no input files or tsconfig.json found in %s", cwd)
+		}
+	}
+
 	opts := compiler.ProgramOptions{
 		Host:   host,
 		Config: parsedConfig,
 	}
 
 	return compiler.NewProgram(opts), nil
+}
+
+// resolveTsConfigPath resolves a `-p` project argument to a tsconfig.json path.
+// If the argument points at a directory, it is joined with "tsconfig.json".
+func resolveTsConfigPath(project, cwd string) (string, error) {
+	abs, err := filepath.Abs(project)
+	if err != nil {
+		return "", fmt.Errorf("invalid project path %q: %w", project, err)
+	}
+	if info, statErr := os.Stat(abs); statErr == nil && info.IsDir() {
+		abs = filepath.Join(abs, "tsconfig.json")
+	}
+	// ParseConfigFileTextToJson requires a normalized (forward-slash) absolute path.
+	return tspath.GetNormalizedAbsolutePath(abs, cwd), nil
+}
+
+// parseTsConfig reads and parses a tsconfig.json, returning a ParsedCommandLine
+// whose FileNames (files/include/exclude) and CompilerOptions (e.g. noLib, lib)
+// are genuinely honored by the program. Previously `-p <path>` merely stuffed
+// the config path into the root file list, so the config was compiled as a source
+// file and its options (including noLib) were ignored.
+func parseTsConfig(configPath string, host compiler.CompilerHost, cwd string, baseOptions *core.CompilerOptions) (*tsoptions.ParsedCommandLine, error) {
+	text, ok := host.FS().ReadFile(configPath)
+	if !ok {
+		return nil, fmt.Errorf("cannot read tsconfig %q", configPath)
+	}
+	jsonVal, jsonErrs := tsoptions.ParseConfigFileTextToJson(
+		configPath,
+		tspath.ToPath(configPath, cwd, host.FS().UseCaseSensitiveFileNames()),
+		text,
+	)
+	if len(jsonErrs) > 0 {
+		return nil, fmt.Errorf("failed to parse tsconfig %q: %s", configPath, formatDiagnostics(jsonErrs))
+	}
+	basePath := tspath.GetDirectoryPath(configPath)
+	parsedConfig := tsoptions.ParseJsonConfigFileContent(jsonVal, host, basePath, baseOptions, configPath, nil, nil, nil)
+	if diags := parsedConfig.GetConfigFileParsingDiagnostics(); len(diags) > 0 {
+		return nil, fmt.Errorf("invalid tsconfig %q: %s", configPath, formatDiagnostics(diags))
+	}
+	return parsedConfig, nil
+}
+
+func formatDiagnostics(diags []*ast.Diagnostic) string {
+	msgs := make([]string, 0, len(diags))
+	for _, d := range diags {
+		msgs = append(msgs, d.String())
+	}
+	return strings.Join(msgs, "; ")
 }
