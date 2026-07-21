@@ -2282,11 +2282,11 @@ func (e *Emitter) getOrCreateTypeId(t *checker.Type) string {
 	case flags&checker.TypeFlagsTypeParameter != 0:
 		irType.Kind = "typeParameter"
 		e.emitTypeParameter(t, irType)
+	case flags&checker.TypeFlagsStringLiteral != 0:
+		irType.Kind = "string"
+		e.emitLiteralType(t, irType)
 	case flags&checker.TypeFlagsLiteral != 0:
 		irType.Kind = "literal"
-		e.emitLiteralType(t, irType)
-	case flags&checker.TypeFlagsStringLiteral != 0:
-		irType.Kind = "stringLiteral"
 		e.emitLiteralType(t, irType)
 	case flags&checker.TypeFlagsNumberLiteral != 0:
 		irType.Kind = "numberLiteral"
