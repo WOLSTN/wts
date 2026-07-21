@@ -543,13 +543,13 @@ func (e *Emitter) emitAllTopLevelStatements(topLevelStmts []*ast.Node) {
 	toplevelIdentId := be2.addInstr("ident", "", "__wolstn_toplevel", nil)
 	be2.addInstr("call", voidTypeId, nil, []string{toplevelIdentId})
 
-	newMain := &Function{
-		Name:       "main",
-		Symbol:     "s_main_entry",
+	entryFn := &Function{
+		Name:       "__wolstn_entry",
+		Symbol:     "s_entry",
 		ReturnType: voidTypeId,
 		Body:       be2.body,
 	}
-	e.irProgram.Functions = append(e.irProgram.Functions, newMain)
+	e.irProgram.Functions = append(e.irProgram.Functions, entryFn)
 
 	e.irProgram.Symbols = append(e.irProgram.Symbols, &Symbol{
 		Id:   "s_toplevel",
@@ -557,8 +557,8 @@ func (e *Emitter) emitAllTopLevelStatements(topLevelStmts []*ast.Node) {
 		Kind: "function",
 	})
 	e.irProgram.Symbols = append(e.irProgram.Symbols, &Symbol{
-		Id:   "s_main_entry",
-		Name: "main",
+		Id:   "s_entry",
+		Name: "__wolstn_entry",
 		Kind: "function",
 	})
 }
